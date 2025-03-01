@@ -1,11 +1,3 @@
-/// This is my first attempt at building a binding library, so there may be some mistakes.
-/// If you encounter any issues, please report them in the issue tracker or feel free to submit a pull request.
-///
-/// The "C" function declarations below is copied from these repositories:
-/// 1. https://github.com/billziss-gh/EnergyBar/blob/master/src/System/NowPlaying.m
-/// 2. https://github.com/davidmurray/ios-reversed-headers/blob/master/MediaRemote/MediaRemote.h
-/// 3. https://github.com/PrivateFrameworks/MediaRemote
-///
 use block2::RcBlock;
 use core::ffi::c_int;
 use dispatch2::ffi::{dispatch_queue_create, DISPATCH_QUEUE_SERIAL};
@@ -27,7 +19,7 @@ mod c_functions;
 use c_functions::*;
 
 mod types;
-use types::*;
+pub use types::*;
 
 /// Timeout duration for waiting on the media remote response.
 const TIMEOUT_DURATION: Duration = Duration::from_secs(5);
@@ -179,6 +171,9 @@ pub fn get_now_playing_application_pid() -> Option<i32> {
 ///
 /// The function interacts with Apple's CoreFoundation API to extract metadata
 /// related to the currently playing media. It blocks execution until the data is retrieved.
+///
+/// The keys used in the returned `HashMap` can be found in the [EnergyBar repository](https://github.com/billziss-gh/EnergyBar/blob/master/src/System/NowPlaying.m),
+/// but note that the types may not be correct.
 ///
 /// # Returns
 /// - `Some(HashMap<String, InfoTypes>)`: If metadata is successfully retrieved.
@@ -347,4 +342,79 @@ pub fn get_now_playing_client_parent_app_bundle_identifier() -> Option<String> {
 /// ```
 pub fn get_now_playing_client_bundle_identifier() -> Option<String> {
     get_bundle_identifier!(MRNowPlayingClientGetBundleIdentifier)
+}
+
+/// Sends a media command to the currently active media client.
+///
+/// This function sends a command to the media remote system, instructing the currently
+/// active media client to perform a specific action.
+///
+/// # Note
+/// - The `useInfo` argument is not supported by this function and is not used in
+/// the current implementation.
+/// - If no media is currently playing, this function may open iTunes (or the default media player)
+/// to handle the command.
+///
+/// # Arguments
+/// - `command`: The `Command` to be sent to the media client. This can represent various
+///   actions such as play, pause, skip, or volume control.
+///
+/// # Returns
+/// - `bool`:
+///     - `true` if the command was successfully sent and processed.
+///     - `false` if the operation failed or the command was not recognized.
+///
+/// # Example
+/// ```rust
+/// use media_remote::{send_command, Command};
+///
+/// if send_command(Command::Play) {
+///     println!("Command sent successfully.");
+/// } else {
+///     println!("Failed to send command.");
+/// }
+/// ```
+pub fn send_command(command: Command) -> bool {
+    unsafe { MRMediaRemoteSendCommand(command.into(), ptr::null()) }
+}
+
+/// Sets the playback speed of the currently active media client.
+///
+/// # Arguments
+/// - `speed`: The playback speed multiplier.
+///
+/// # Note
+/// - Playback speed changes typically do not work most of the time.
+///   Depending on the media client or content, setting the playback speed may not have the desired effect.
+///
+/// # Example
+/// ```rust
+/// use media_remote::set_playback_speed;
+///
+/// let speed = 2;
+/// set_playback_speed(speed);
+/// println!("Playback speed set to: {}", speed);
+/// ```
+pub fn set_playback_speed(speed: i32) {
+    unsafe { MRMediaRemoteSetPlaybackSpeed(speed) }
+}
+
+/// Sets the elapsed time of the currently playing media.
+///
+/// # Arguments
+/// - `elapsed_time`: The elapsed time in seconds to set the current position of the media.
+///
+/// # Note
+/// - **Limitations**: Setting the elapsed time can often cause the media to pause. Be cautious
+///   when using this function, as the playback might be interrupted and require manual resumption.
+///
+/// # Example
+/// ```rust
+/// use media_remote::set_elapsed_time;
+///
+/// let elapsed = 1.0;  
+/// set_elapsed_time(elapsed);
+/// println!("Elapsed time set to: {} seconds", elapsed);
+pub fn set_elapsed_time(elapsed_time: f64) {
+    unsafe { MRMediaRemoteSetElapsedTime(elapsed_time) }
 }

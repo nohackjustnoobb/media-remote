@@ -47,3 +47,27 @@ impl Display for InfoTypes {
         }
     }
 }
+
+#[derive(Debug, Copy, Clone)]
+pub enum Command {
+    Play = 0,
+    Pause = 1,
+    TogglePlayPause = 2,
+    Stop = 3,
+    NextTrack = 4,
+    PreviousTrack = 5,
+    ToggleShuffle = 6,
+    ToggleRepeat = 7,
+    StartForwardSeek = 8,
+    EndForwardSeek = 9,
+    StartBackwardSeek = 10,
+    EndBackwardSeek = 11,
+    GoBackFifteenSeconds = 12,
+    SkipFifteenSeconds = 13,
+}
+
+impl Into<i32> for Command {
+    fn into(self) -> i32 {
+        self as i32
+    }
+}

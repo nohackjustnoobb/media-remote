@@ -66,3 +66,30 @@ fn test_get_now_playing_info() {
         None => println!("No info found or timed out."),
     }
 }
+
+use media_remote::{send_command, Command};
+
+#[test]
+fn test_send_command() {
+    if send_command(Command::TogglePlayPause) {
+        println!("Command sent successfully.");
+    } else {
+        println!("Failed to send command.");
+    }
+}
+
+use media_remote::set_playback_speed;
+
+#[test]
+fn test_set_playback_speed() {
+    set_playback_speed(2);
+    println!("Playback speed set to 2.");
+}
+
+use media_remote::set_elapsed_time;
+
+#[test]
+fn test_set_elapsed_time() {
+    set_elapsed_time(1.0);
+    println!("Elapsed time set to 0.");
+}
