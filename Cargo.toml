@@ -1,0 +1,15 @@
+[package]
+name = "media-remote"
+version = "0.1.0"
+license = "MIT"
+description = "Bindings for MediaRemote.framework"
+readme = "README.md"
+keywords = ["macos", "media-remote", "bindings"]
+edition = "2021"
+
+[dependencies]
+block2 = "0.6.0"
+dispatch2 = "0.2.0"
+objc2 = "0.6.0"
+objc2-core-foundation = "0.3.0"
+objc2-foundation = "0.3.0"
