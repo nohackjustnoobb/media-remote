@@ -10,6 +10,9 @@ This library **should** be safe to use, but it is the first attempt at building 
 
 _This is a brief documentation. More detailed documentation, including examples, is written inside the code documentation. Hover over the function to check the documentation._
 
+<details>
+  <summary>Low Level API</summary>
+
 ### `get_now_playing_application_is_playing() -> Option<bool>`
 
 Checks whether the currently playing media application is actively playing.
@@ -122,7 +125,13 @@ Registers the caller for "Now Playing" notifications.
 Unregisters the caller for "Now Playing" notifications.
 
 - **Note**:
+
   - Should be called when notifications are no longer needed to free resources.
+
+  </details>
+
+  <details>
+  <summary>Helper Functions</summary>
 
 ### `add_observer(notification: Notification, closure: F) -> Observer`
 
@@ -148,8 +157,23 @@ Removes a previously added observer.
 
   - `observer`: The Observer handle returned from add_observer().
 
+### `get_bundle_info(id: &str) -> Option<BundleInfo>`
+
+Retrieves information about an application based on its bundle identifier, including the application's name and icon.
+
+- **Arguments**:
+
+  - `id`: A string slice representing the bundle identifier of the application.
+
+- **Returns**:
+
+  - `Some(BundleInfo)`: If the application is found, containing the application's name and icon.
+  - `None`: If the application cannot be found, or if there is an error retrieving the information.
+
+</details>
+
 ## TODO
 
-- [*] Support NSNotificationCenter Observer
+- [-] Support NSNotificationCenter Observer
 - [ ] Higher level API
-- [ ] Helper functions for getting app name and icon
+- [-] Helper functions for getting app name and icon

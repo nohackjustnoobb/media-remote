@@ -3,6 +3,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use image::DynamicImage;
 use objc2::{rc::Retained, runtime::AnyObject};
 
 pub type Id = *const AnyObject;
@@ -48,7 +49,7 @@ impl Display for InfoTypes {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub enum Command {
     Play = 0,
     Pause = 1,
@@ -72,7 +73,7 @@ impl Into<i32> for Command {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub enum Notification {
     NowPlayingInfoDidChange,
     NowPlayingPlaybackQueueDidChange,
@@ -106,4 +107,10 @@ impl Notification {
             Notification::RouteStatusDidChange => "kMRMediaRemoteRouteStatusDidChangeNotification",
         }
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct BundleInfo {
+    pub name: String,
+    pub icon: DynamicImage,
 }
