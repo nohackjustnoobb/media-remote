@@ -1,11 +1,11 @@
 use block2::RcBlock;
 use core::ffi::c_int;
 use dispatch2::ffi::{dispatch_queue_create, DISPATCH_QUEUE_SERIAL};
-use objc2::{runtime::AnyObject, Encoding};
+use objc2::{rc::Retained, runtime::AnyObject, Encoding};
 use objc2_core_foundation::{
     CFData, CFDate, CFDictionary, CFDictionaryGetCount, CFDictionaryGetKeysAndValues,
 };
-use objc2_foundation::{NSNumber, NSString};
+use objc2_foundation::{NSNotification, NSNotificationCenter, NSNumber, NSString};
 use std::{
     collections::HashMap,
     ffi::c_void,
@@ -417,4 +417,103 @@ pub fn set_playback_speed(speed: i32) {
 /// println!("Elapsed time set to: {} seconds", elapsed);
 pub fn set_elapsed_time(elapsed_time: f64) {
     unsafe { MRMediaRemoteSetElapsedTime(elapsed_time) }
+}
+
+/// Registers for "Now Playing" notifications.
+///
+/// This function **must** be called before adding any observers using [`add_observer`],
+/// or notifications may not be received.
+///
+/// # Example
+/// ```rust
+/// use media_remote::register_for_now_playing_notifications;
+///
+/// register_for_now_playing_notifications();
+/// ```
+pub fn register_for_now_playing_notifications() {
+    unsafe {
+        let queue = dispatch_queue_create(ptr::null(), DISPATCH_QUEUE_SERIAL);
+        MRMediaRemoteRegisterForNowPlayingNotifications(queue);
+    }
+}
+
+/// Unregisters from "Now Playing" notifications.
+///
+///
+/// # Example
+/// ```rust
+/// use media_remote::unregister_for_now_playing_notifications;
+///
+/// unregister_for_now_playing_notifications();
+/// ```
+pub fn unregister_for_now_playing_notifications() {
+    unsafe {
+        MRMediaRemoteUnregisterForNowPlayingNotifications();
+    }
+}
+
+/// Adds an observer for a specific media notification.
+///
+/// This function registers a closure to be executed when the specified `notification`
+/// is posted. It listens for notifications related to media playback state changes.
+///
+/// **Note:** [`register_for_now_playing_notifications`] **must** be called before using
+/// this function to ensure notifications are received.
+///
+/// # Arguments
+/// - `notification`: The [`Notification`] type representing the event to observe.
+/// - `closure`: A closure to execute when the notification is received.
+///
+/// # Returns
+/// - An [`Observer`] handle that can be used to remove the observer later.
+///
+/// # Example
+/// ```rust
+/// use media_remote::{register_for_now_playing_notifications, add_observer, Notification};
+///
+/// register_for_now_playing_notifications();
+///
+/// let observer = add_observer(Notification::NowPlayingApplicationIsPlayingDidChange, || {
+///     println!("Now playing status changed.");
+/// });
+/// ```
+pub fn add_observer<F: Fn() + 'static>(notification: Notification, closure: F) -> Observer {
+    unsafe {
+        let observer = NSNotificationCenter::defaultCenter()
+            .addObserverForName_object_queue_usingBlock(
+                Some(NSString::from_str(notification.as_str()).as_ref()),
+                None,
+                None,
+                &RcBlock::new(move |_: NonNull<NSNotification>| closure()),
+            );
+
+        Retained::cast_unchecked(observer)
+    }
+}
+
+/// Removes a previously added observer.
+///
+/// This function removes an observer registered with [`add_observer`], preventing further
+/// notifications from being received.
+///
+/// # Arguments
+/// - `observer`: The [`Observer`] handle returned from [`add_observer`].
+///
+/// # Example
+/// ```rust
+/// use media_remote::{register_for_now_playing_notifications, add_observer, remove_observer, Notification};
+///
+/// register_for_now_playing_notifications();
+///
+/// let observer = add_observer(Notification::NowPlayingApplicationIsPlayingDidChange, || {
+///     println!("Now playing status changed.");
+/// });
+///
+/// // Later, when no longer needed:
+/// remove_observer(observer);
+/// ```
+pub fn remove_observer(observer: Observer) {
+    unsafe {
+        NSNotificationCenter::defaultCenter().removeObserver(&observer);
+    }
 }

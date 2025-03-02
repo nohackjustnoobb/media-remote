@@ -82,7 +82,7 @@ Sends a media command to the currently active media client.
   - `true`: If the command was successfully sent and processed.
   - `false`: If the operation failed or the command was not recognized.
 
-- **Note**:
+- **Notes**:
   - The `useInfo` argument is not supported by this function and is not used in the current implementation.
   - If no media is currently playing, this function may open iTunes (or the default media player) to handle the command.
 
@@ -110,8 +110,46 @@ Sets the elapsed time of the currently playing media.
 
   - Setting the elapsed time can often cause the media to pause. Be cautious when using this function, as the playback might be interrupted and require manual resumption.
 
+### `register_for_now_playing_notifications()`
+
+Registers the caller for "Now Playing" notifications.
+
+- **Note**:
+  - Must be called before adding observers to ensure notifications are received.
+
+### `unregister_for_now_playing_notifications()`
+
+Unregisters the caller for "Now Playing" notifications.
+
+- **Note**:
+  - Should be called when notifications are no longer needed to free resources.
+
+### `add_observer(notification: Notification, closure: F) -> Observer`
+
+Adds an observer for a specific media notification.
+
+- **Arguments**:
+
+  - `notification`: The Notification type representing the event to observe.
+  - `closure`: A closure to execute when the notification is received.
+
+- **Returns**:
+
+  - An Observer handle that can be used to remove the observer later.
+
+- **Note**:
+  - `register_for_now_playing_notifications()` **must** be called before using this function, or notifications may not be received.
+
+### `remove_observer(observer: Observer)`
+
+Removes a previously added observer.
+
+- **Arguments**:
+
+  - `observer`: The Observer handle returned from add_observer().
+
 ## TODO
 
-- [ ] Support NSNotificationCenter Observer
+- [*] Support NSNotificationCenter Observer
 - [ ] Higher level API
 - [ ] Helper functions for getting app name and icon

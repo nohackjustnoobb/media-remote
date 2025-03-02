@@ -3,7 +3,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use objc2::runtime::AnyObject;
+use objc2::{rc::Retained, runtime::AnyObject};
 
 pub type Id = *const AnyObject;
 
@@ -69,5 +69,41 @@ pub enum Command {
 impl Into<i32> for Command {
     fn into(self) -> i32 {
         self as i32
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum Notification {
+    NowPlayingInfoDidChange,
+    NowPlayingPlaybackQueueDidChange,
+    NowPlayingApplicationDidChange,
+    NowPlayingApplicationIsPlayingDidChange,
+    PickableRoutesDidChange,
+    RouteStatusDidChange,
+}
+
+pub type Observer = Retained<AnyObject>;
+
+impl Notification {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Notification::NowPlayingInfoDidChange => {
+                "kMRMediaRemoteNowPlayingInfoDidChangeNotification"
+            }
+
+            Notification::NowPlayingPlaybackQueueDidChange => {
+                "kMRMediaRemoteNowPlayingPlaybackQueueDidChangeNotification"
+            }
+            Notification::NowPlayingApplicationDidChange => {
+                "kMRMediaRemoteNowPlayingApplicationDidChangeNotification"
+            }
+            Notification::NowPlayingApplicationIsPlayingDidChange => {
+                "kMRMediaRemoteNowPlayingApplicationIsPlayingDidChangeNotification"
+            }
+            Notification::PickableRoutesDidChange => {
+                "kMRMediaRemotePickableRoutesDidChangeNotification"
+            }
+            Notification::RouteStatusDidChange => "kMRMediaRemoteRouteStatusDidChangeNotification",
+        }
     }
 }

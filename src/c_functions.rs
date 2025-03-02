@@ -43,4 +43,8 @@ extern "C" {
     pub fn MRMediaRemoteSetPlaybackSpeed(speed: c_int);
 
     pub fn MRMediaRemoteSetElapsedTime(elapsedTime: c_double);
+
+    pub fn MRMediaRemoteRegisterForNowPlayingNotifications(queue: *mut dispatch_queue_s);
+
+    pub fn MRMediaRemoteUnregisterForNowPlayingNotifications();
 }

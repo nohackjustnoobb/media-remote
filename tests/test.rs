@@ -67,6 +67,7 @@ fn test_get_now_playing_info() {
     }
 }
 
+use media_remote::remove_observer;
 use media_remote::{send_command, Command};
 
 #[test]
@@ -91,5 +92,30 @@ use media_remote::set_elapsed_time;
 #[test]
 fn test_set_elapsed_time() {
     set_elapsed_time(1.0);
-    println!("Elapsed time set to 0.");
+    println!("Elapsed time set to 1.");
+}
+
+use media_remote::{
+    add_observer, register_for_now_playing_notifications, unregister_for_now_playing_notifications,
+    Notification,
+};
+
+#[test]
+fn test_observer() {
+    register_for_now_playing_notifications();
+    println!("Registered for now playing notifications.");
+
+    let observer = add_observer(
+        Notification::NowPlayingApplicationIsPlayingDidChange,
+        move || {
+            println!("Now playing status changed.");
+        },
+    );
+    print!("Observer added.");
+
+    remove_observer(observer);
+    print!("Observer removed.");
+
+    unregister_for_now_playing_notifications();
+    println!("Unregistered for now playing notifications.");
 }
