@@ -50,20 +50,31 @@ fn test_now_playing_send_command() {
 }
 
 #[test]
+fn test_now_playing_subscribe() {
+    let now_playing: NowPlaying = NowPlaying::new();
+
+    let token = now_playing.subscribe(|info| {
+        print_info(info.as_ref().unwrap());
+    });
+
+    now_playing.unsubscribe(token);
+}
+
+use std::sync::{Arc, Condvar, Mutex};
+
+#[test]
 #[ignore]
 fn test_now_playing_loop() {
     let now_playing = NowPlaying::new();
 
-    loop {
-        {
-            let guard = now_playing.get_info();
-            let info = guard.as_ref();
+    now_playing.subscribe(|info| {
+        print_info(info.as_ref().unwrap());
+    });
 
-            if let Some(info) = info {
-                print_info(info);
-            }
-        }
+    // Blocks forever
+    let pair = Arc::new((Mutex::new(()), Condvar::new()));
+    let (lock, cvar) = &*pair;
 
-        std::thread::sleep(std::time::Duration::from_secs(3));
-    }
+    let guard = lock.lock().unwrap();
+    let _unused = cvar.wait(guard).unwrap();
 }

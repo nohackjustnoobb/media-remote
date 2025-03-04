@@ -61,6 +61,43 @@ Retrieves the latest now playing information.
 
   - The lock should be released as soon as possible to minimize blocking time.
 
+### `NowPlaying::subscribe<F: Fn(RwLockReadGuard<'_, Option<NowPlayingInfo>>) + Send + Sync + 'static>(&self, listener: F) -> ListenerToken`
+
+Subscribes a listener to receive updates when the "Now Playing" information changes.
+
+- **Arguments**:
+
+  - `listener`: A function or closure that accepts a `RwLockReadGuard<'_, Option<NowPlayingInfo>>`.
+
+- **Returns**:
+
+  - `ListenerToken`: A token representing the listener, which can later be used to unsubscribe.
+
+### `NowPlaying::unsubscribe(&self, token: ListenerToken)`
+
+Unsubscribes a previously registered listener using the provided `ListenerToken`.
+
+- **Arguments**:
+
+  - `token`: The `ListenerToken` returned when the listener was subscribed.
+
+### `NowPlayingInfo`
+
+```rust
+pub struct NowPlayingInfo {
+    pub is_playing: Option<bool>,
+    pub title: Option<String>,
+    pub artist: Option<String>,
+    pub album: Option<String>,
+    pub album_cover: Option<DynamicImage>,
+    pub elapsed_time: Option<f64>,
+    pub duration: Option<f64>,
+    pub bundle_id: Option<String>,
+    pub bundle_name: Option<String>,
+    pub bundle_icon: Option<DynamicImage>,
+}
+```
+
 ### Media Control Functions
 
 These functions allow you to control the currently playing media.
@@ -247,10 +284,3 @@ Retrieves information about an application based on its bundle identifier, inclu
   - `None`: If the application cannot be found, or if there is an error retrieving the information.
 
 </details>
-
-## TODO
-
-- [x] Support NSNotificationCenter Observer
-- [x] High Level API
-- [x] Helper functions for getting app name and icon
-- [ ] Observer for high level API

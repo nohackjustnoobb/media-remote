@@ -1,6 +1,10 @@
 use std::{
+    collections::HashMap,
     io::Cursor,
-    sync::{Arc, RwLock, RwLockReadGuard},
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc, Mutex, RwLock, RwLockReadGuard,
+    },
     time::SystemTime,
 };
 
@@ -12,12 +16,6 @@ use crate::{
     get_now_playing_info, register_for_now_playing_notifications, remove_observer, send_command,
     unregister_for_now_playing_notifications, Command, InfoTypes, Notification, Number, Observer,
 };
-
-#[derive(Debug)]
-pub struct NowPlaying {
-    info: Arc<RwLock<Option<NowPlayingInfo>>>,
-    observers: Vec<Observer>,
-}
 
 /// A struct for managing and interacting with the "Now Playing" media session.
 ///
@@ -32,6 +30,23 @@ pub struct NowPlaying {
 /// let now_playing = NowPlaying::new();
 /// now_playing.play();
 /// ```
+pub struct NowPlaying {
+    info: Arc<RwLock<Option<NowPlayingInfo>>>,
+    observers: Vec<Observer>,
+    listeners: Arc<
+        Mutex<
+            HashMap<
+                ListenerToken,
+                Box<dyn Fn(RwLockReadGuard<'_, Option<NowPlayingInfo>>) + Send + Sync>,
+            >,
+        >,
+    >,
+    token_counter: Arc<AtomicU64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ListenerToken(u64);
+
 #[derive(Debug, Clone)]
 pub struct NowPlayingInfo {
     pub is_playing: Option<bool>,
@@ -184,14 +199,20 @@ impl NowPlaying {
     fn register(&mut self) {
         register_for_now_playing_notifications();
 
+        // initialize with current state
         let info = Arc::clone(&self.info);
         update_all(info.clone());
 
         macro_rules! add_observer_macro {
             ($notification:expr, $update_fn:expr) => {{
                 let info = Arc::clone(&self.info);
+                let listeners = Arc::clone(&self.listeners);
+
                 self.observers.push(add_observer($notification, move || {
-                    $update_fn(info.clone())
+                    $update_fn(info.clone());
+                    for (_, listener) in listeners.clone().lock().unwrap().iter() {
+                        listener(info.read().unwrap());
+                    }
                 }));
             }};
         }
@@ -230,11 +251,78 @@ impl NowPlaying {
         let mut new_instance = Self {
             info: Arc::new(RwLock::new(None)),
             observers: vec![],
+            listeners: Arc::new(Mutex::new(HashMap::new())),
+            token_counter: Arc::new(AtomicU64::new(0)),
         };
 
         new_instance.register();
 
         new_instance
+    }
+
+    /// Subscribes a listener to receive updates when the "Now Playing" information changes.
+    ///
+    /// # Arguments
+    /// - `listener`: A function or closure that accepts a `RwLockReadGuard<'_, Option<NowPlayingInfo>>`.
+    ///   The function will be invoked with the current "Now Playing" info whenever the data is updated.
+    ///
+    /// # Returns
+    /// - `ListenerToken`: A token representing the listener, which can later be used to unsubscribe.
+    ///
+    /// # Example
+    /// ```rust
+    /// use media_remote::NowPlaying;
+    ///
+    /// let now_playing: NowPlaying = NowPlaying::new();
+    ///
+    /// now_playing.subscribe(|guard| {
+    ///     let info = guard.as_ref();
+    ///     if let Some(info) = info {
+    ///         println!("Currently playing: {:?}", info.title);
+    ///     }    
+    /// });
+    /// ```
+    pub fn subscribe<F: Fn(RwLockReadGuard<'_, Option<NowPlayingInfo>>) + Send + Sync + 'static>(
+        &self,
+        listener: F,
+    ) -> ListenerToken {
+        listener(self.get_info());
+
+        let token = ListenerToken(self.token_counter.fetch_add(1, Ordering::Relaxed));
+
+        self.listeners
+            .lock()
+            .unwrap()
+            .insert(token.clone(), Box::new(listener));
+
+        token
+    }
+
+    /// Unsubscribes a previously registered listener using the provided `ListenerToken`.
+    ///
+    ///
+    /// # Arguments
+    /// - `token`: The `ListenerToken` returned when the listener was subscribed. It is used to identify
+    ///   and remove the listener.
+    ///
+    /// # Example
+    /// ```rust
+    /// use media_remote::NowPlaying;
+    ///
+    /// let now_playing: NowPlaying = NowPlaying::new();
+    ///
+    /// let token = now_playing.subscribe(|guard| {
+    ///     let info = guard.as_ref();
+    ///     if let Some(info) = info {
+    ///         println!("Currently playing: {:?}", info.title);
+    ///     }    
+    /// });
+    ///
+    /// now_playing.unsubscribe(token);
+    /// ```
+    pub fn unsubscribe(&self, token: ListenerToken) {
+        let mut listeners = self.listeners.lock().unwrap();
+        listeners.remove(&token);
     }
 
     /// Retrieves the latest now playing information.
