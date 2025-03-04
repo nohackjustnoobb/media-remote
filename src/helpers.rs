@@ -6,7 +6,8 @@ use objc2::rc::Retained;
 use objc2_app_kit::NSWorkspace;
 use objc2_foundation::{NSFileManager, NSNotification, NSNotificationCenter, NSString};
 
-use crate::{BundleInfo, Notification, Observer};
+#[allow(unused_imports)]
+use crate::{register_for_now_playing_notifications, BundleInfo, Notification, Observer};
 
 // Retrieves information about an application based on its bundle identifier.
 ///

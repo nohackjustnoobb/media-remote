@@ -1,4 +1,12 @@
+<div align="center">
+
 # MediaRemote in Rust
+
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/nohackjustnoobb/media-remote/main.yml?style=for-the-badge&label=test)](https://github.com/nohackjustnoobb/media-remote/actions/workflows/main.yml)
+[![GitHub License](https://img.shields.io/github/license/nohackjustnoobb/media-remote?style=for-the-badge)](https://github.com/nohackjustnoobb/media-remote/blob/master/LICENSE)
+[![Crates.io Version](https://img.shields.io/crates/v/media-remote?style=for-the-badge)](https://crates.io/crates/media-remote)
+
+</div>
 
 This library provides bindings for Apple's private framework, **MediaRemote**. It is primarily designed to access information about media that is currently playing. Therefore, not all methods from the MediaRemote framework are included in these bindings.
 
