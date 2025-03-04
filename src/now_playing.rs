@@ -121,7 +121,9 @@ fn update_info(info: Arc<RwLock<Option<NowPlayingInfo>>>) {
         macro_rules! update_string_info {
             ($key:expr, $field:expr) => {
                 if let Some(InfoTypes::String(s)) = info.get($key) {
-                    $field = Some(s.clone());
+                    if !s.is_empty() {
+                        $field = Some(s.clone());
+                    }
                 }
             };
         }
