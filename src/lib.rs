@@ -24,6 +24,9 @@ pub use types::*;
 mod helpers;
 pub use helpers::*;
 
+mod now_playing;
+pub use now_playing::*;
+
 /// Timeout duration for waiting on the media remote response.
 const TIMEOUT_DURATION: Duration = Duration::from_secs(5);
 
@@ -268,7 +271,7 @@ pub fn get_now_playing_info() -> Option<HashMap<String, InfoTypes>> {
         MRMediaRemoteGetNowPlayingInfo
     );
 
-    info.map(|rc_info| Rc::try_unwrap(rc_info).unwrap())
+    info.and_then(|info| Rc::try_unwrap(info).ok())
 }
 
 macro_rules! get_bundle_identifier {

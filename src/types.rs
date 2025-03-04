@@ -81,6 +81,9 @@ pub enum Notification {
     NowPlayingApplicationIsPlayingDidChange,
     PickableRoutesDidChange,
     RouteStatusDidChange,
+    NowPlayingPlaybackQueueChanged,
+    PlaybackQueueContentItemsChanged,
+    NowPlayingApplicationClientStateDidChange,
 }
 
 pub type Observer = Retained<AnyObject>;
@@ -91,7 +94,6 @@ impl Notification {
             Notification::NowPlayingInfoDidChange => {
                 "kMRMediaRemoteNowPlayingInfoDidChangeNotification"
             }
-
             Notification::NowPlayingPlaybackQueueDidChange => {
                 "kMRMediaRemoteNowPlayingPlaybackQueueDidChangeNotification"
             }
@@ -105,6 +107,15 @@ impl Notification {
                 "kMRMediaRemotePickableRoutesDidChangeNotification"
             }
             Notification::RouteStatusDidChange => "kMRMediaRemoteRouteStatusDidChangeNotification",
+            Notification::NowPlayingPlaybackQueueChanged => {
+                "kMRNowPlayingPlaybackQueueChangedNotification"
+            }
+            Notification::PlaybackQueueContentItemsChanged => {
+                "kMRPlaybackQueueContentItemsChangedNotification"
+            }
+            Notification::NowPlayingApplicationClientStateDidChange => {
+                "kMRMediaRemoteNowPlayingApplicationClientStateDidChange"
+            }
         }
     }
 }

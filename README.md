@@ -1,14 +1,90 @@
 # MediaRemote in Rust
 
-This library provides bindings for Apple's private framework, MediaRemote. It is primarily designed to access information about media that is currently playing. As a result, not all methods from the MediaRemote framework are included in these bindings.
+This library provides bindings for Apple's private framework, **MediaRemote**. It is primarily designed to access information about media that is currently playing. Therefore, not all methods from the MediaRemote framework are included in these bindings.
 
-This library **should** be safe to use, but it is the first attempt at building these bindings, and unexpected errors may occur. If you encounter any issues, please report them in the issue tracker or submit a pull request to help improve the library.
+This library **should** be safe to use. However, it is the first attempt at building these bindings, so there is a high chance of unexpected errors. If you encounter any issues, please report them in the issue tracker or submit a pull request to help improve the library.
 
 **Warning:** Since MediaRemote is a private Apple framework, using it may introduce compatibility or stability issues, and your app may not be approved for distribution on the App Store. Use this library at your own risk.
+
+## Quick Start
+
+To get started, first ensure that the library is installed.
+
+```rust
+use media_remote::NowPlaying;
+
+fn main() {
+    // Create an instance of NowPlaying to interact with the media.
+    let now_playing = NowPlaying::new();
+
+    // Use a guard lock to safely access media information within this block.
+    // The guard should be released as soon as possible to avoid blocking.
+    {
+        let guard = now_playing.get_info();
+        let info = guard.as_ref();
+
+        // If information is available, print the title of the currently playing media.
+        if let Some(info) = info {
+            println!("Currently playing: {:?}", info.title);
+        }
+    }
+
+    // Toggle the play/pause state of the media.
+    now_playing.toggle();
+}
+```
 
 ## API Documentation
 
 _This is a brief documentation. More detailed documentation, including examples, is written inside the code documentation. Hover over the function to check the documentation._
+
+<details>
+  <summary>High Level API</summary>
+
+### `NowPlaying::new() -> NowPlaying`
+
+Creates a new instance of `NowPlaying` and registers for playback notifications.
+
+- **Returns**:
+
+  - `NowPlaying`: A new instance of the `NowPlaying` struct.
+
+### `NowPlaying::get_info(&self) -> RwLockReadGuard<'_, Option<NowPlayingInfo>>`
+
+Retrieves the latest now playing information.
+
+- **Returns**:
+
+  - `RwLockReadGuard<'_, Option<NowPlayingInfo>>`: A guard to the now playing metadata.
+
+- **Note**:
+
+  - The lock should be released as soon as possible to minimize blocking time.
+
+### Media Control Functions
+
+These functions allow you to control the currently playing media.
+
+- `NowPlaying::toggle(&self) -> bool`
+
+  Toggles between play and pause states.
+
+- `NowPlaying::play(&self) -> bool`
+
+  Starts playing the media.
+
+- `NowPlaying::pause(&self) -> bool`
+
+  Pauses the media.
+
+- `NowPlaying::next(&self) -> bool`
+
+  Skips to the next track.
+
+- `NowPlaying::previous(&self) -> bool`
+
+  Goes back to the previous track.
+  </details>
 
 <details>
   <summary>Low Level API</summary>
@@ -174,6 +250,7 @@ Retrieves information about an application based on its bundle identifier, inclu
 
 ## TODO
 
-- [-] Support NSNotificationCenter Observer
-- [ ] Higher level API
-- [-] Helper functions for getting app name and icon
+- [x] Support NSNotificationCenter Observer
+- [x] High Level API
+- [x] Helper functions for getting app name and icon
+- [ ] Observer for high level API
