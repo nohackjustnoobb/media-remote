@@ -1,6 +1,6 @@
 [package]
 name = "media-remote"
-version = "0.1.0"
+version = "0.1.1"
 license = "MIT"
 description = "Bindings for MediaRemote.framework"
 readme = "README.md"
@@ -17,3 +17,7 @@ objc2 = "0.6.0"
 objc2-app-kit = "0.3.0"
 objc2-core-foundation = "0.3.0"
 objc2-foundation = "0.3.0"
+
+[package.metadata.docs.rs]
+default-target = "aarch64-apple-darwin"
+targets = ["aarch64-apple-darwin", "x86_64-apple-darwin"]

@@ -43,12 +43,12 @@ pub fn get_bundle_info(id: &str) -> Option<BundleInfo> {
         let workspace = NSWorkspace::sharedWorkspace();
         let url = workspace.URLForApplicationWithBundleIdentifier(&NSString::from_str(id))?;
 
-        let absolute = &url.absoluteString()?;
+        let path = &url.path()?;
 
         let file_manager = NSFileManager::defaultManager();
-        let name = file_manager.displayNameAtPath(absolute);
+        let name = file_manager.displayNameAtPath(path);
 
-        let icon = workspace.iconForFile(absolute);
+        let icon = workspace.iconForFile(path);
         let icon_data = icon.TIFFRepresentation()?;
         let icon = ImageReader::new(Cursor::new(icon_data.to_vec()))
             .with_guessed_format()
