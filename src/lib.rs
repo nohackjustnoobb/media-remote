@@ -254,7 +254,7 @@ pub fn get_now_playing_info() -> Option<HashMap<String, InfoTypes>> {
                             let date_ref = &*(val_ptr as *const CFDate);
                             InfoTypes::SystemTime(date_ref.to_system_time().unwrap())
                         }
-                        "NSSubrangeData" => {
+                        "NSSubrangeData" | "_NSInlineData" => {
                             let data_ref = &*(val_ptr as *const CFData);
                             InfoTypes::Data(data_ref.to_vec())
                         }
