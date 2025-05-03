@@ -275,7 +275,7 @@ pub fn get_now_playing_info() -> Option<HashMap<String, InfoTypes>> {
 }
 
 macro_rules! get_bundle_identifier {
-    ( $getter:ident) => {
+    ($getter:ident) => {
         safely_dispatch_and_wait!(
             |id: Id| {
                 if !id.is_null() {

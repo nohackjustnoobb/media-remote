@@ -1,0 +1,31 @@
+// https://www.reddit.com/r/applescript/comments/1k3i4uw/comment/mo9drnj/?context=3
+// https://github.com/userlandkernel/ios17-dyld-headers/blob/89931f35a750ed18297df97f009524ed37e60d67/MediaRemote/MRNowPlayingRequest.h#L7
+
+function run() {
+  const MediaRemote = $.NSBundle.bundleWithPath(
+    "/System/Library/PrivateFrameworks/MediaRemote.framework/"
+  );
+  MediaRemote.load;
+
+  const MRNowPlayingRequest = $.NSClassFromString("MRNowPlayingRequest");
+
+  const client = MRNowPlayingRequest.localNowPlayingPlayerPath.client;
+  const clientConverted = {
+    bundleIdentifier: client.bundleIdentifier.js,
+    parentApplicationBundleIdentifier:
+      client.parentApplicationBundleIdentifier.js,
+  };
+
+  const infoDict = MRNowPlayingRequest.localNowPlayingItem.nowPlayingInfo;
+  const infoConverted = {};
+  for (const key in infoDict.js) {
+    const value = infoDict.valueForKey(key).js;
+    infoConverted[key] = typeof value !== "object" ? value : value.getTime();
+  }
+
+  return JSON.stringify({
+    isPlaying: MRNowPlayingRequest.localIsPlaying,
+    client: clientConverted,
+    info: infoConverted,
+  });
+}
