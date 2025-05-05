@@ -1,4 +1,4 @@
-use media_remote::{NowPlaying, NowPlayingInfo};
+use media_remote::{Controller, NowPlaying, NowPlayingInfo};
 
 fn print_info(info: &NowPlayingInfo) {
     println!("Is Playing: {:?}", info.is_playing);

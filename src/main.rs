@@ -1,21 +1,12 @@
-use serde_json::{to_string_pretty, Value};
-use std::process::Command;
+use media_remote::get_raw_info;
+use serde_json::to_string_pretty;
 
 fn main() {
-    let output = Command::new("osascript")
-        .arg("-l")
-        .arg("JavaScript")
-        .arg("src/nowPlaying.jxa")
-        .output()
-        .expect("Failed to execute command");
+    let info = get_raw_info();
 
-    if output.status.success() {
-        let data: Value = serde_json::from_slice(&output.stdout).expect("Failed to parse JSON");
-        println!(
-            "{}",
-            to_string_pretty(&data).expect("Failed to convert to pretty JSON")
-        );
+    if let Some(info) = info {
+        println!("{}", to_string_pretty(&info).unwrap());
     } else {
-        panic!("Failed to execute command");
+        println!("Failed to get raw info");
     }
 }

@@ -9,7 +9,7 @@ use objc2_core_foundation::CFDictionary;
 use objc2_foundation::NSString;
 use std::{ffi::c_double, ptr::NonNull};
 
-use crate::types::Id;
+use crate::utils::types::Id;
 
 #[link(name = "MediaRemote", kind = "framework")]
 extern "C" {

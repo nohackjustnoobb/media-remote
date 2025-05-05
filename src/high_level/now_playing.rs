@@ -8,14 +8,17 @@ use std::{
     time::SystemTime,
 };
 
-use image::{DynamicImage, ImageReader};
+use image::ImageReader;
 
 use crate::{
     add_observer, get_bundle_info, get_now_playing_application_is_playing,
     get_now_playing_client_bundle_identifier, get_now_playing_client_parent_app_bundle_identifier,
-    get_now_playing_info, register_for_now_playing_notifications, remove_observer, send_command,
-    unregister_for_now_playing_notifications, Command, InfoTypes, Notification, Number, Observer,
+    get_now_playing_info, register_for_now_playing_notifications, remove_observer,
+    unregister_for_now_playing_notifications, InfoTypes, Notification, NowPlayingInfo, Number,
+    Observer,
 };
+
+use super::controller::Controller;
 
 /// A struct for managing and interacting with the "Now Playing" media session.
 ///
@@ -25,7 +28,7 @@ use crate::{
 ///
 /// # Example
 /// ```rust
-/// use media_remote::NowPlaying;
+/// use media_remote::{Controller, NowPlaying};
 ///
 /// let now_playing = NowPlaying::new();
 /// now_playing.play();
@@ -46,33 +49,6 @@ pub struct NowPlaying {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ListenerToken(u64);
-
-#[derive(Debug, Clone)]
-pub struct NowPlayingInfo {
-    pub is_playing: Option<bool>,
-
-    pub title: Option<String>,
-    pub artist: Option<String>,
-    pub album: Option<String>,
-    pub album_cover: Option<DynamicImage>,
-    pub elapsed_time: Option<f64>,
-    pub duration: Option<f64>,
-    pub info_update_time: Option<SystemTime>,
-
-    pub bundle_id: Option<String>,
-    pub bundle_name: Option<String>,
-    pub bundle_icon: Option<DynamicImage>,
-}
-
-macro_rules! send_command {
-    ($self:expr,$command:expr) => {{
-        if $self.info.read().unwrap().as_ref().is_some() {
-            send_command($command)
-        } else {
-            false
-        }
-    }};
-}
 
 fn update_all(info: Arc<RwLock<Option<NowPlayingInfo>>>) {
     let mut info_guard = info.write().unwrap();
@@ -373,99 +349,16 @@ impl NowPlaying {
 
         self.info.read().unwrap()
     }
-
-    /// Toggles between play and pause states.
-    ///
-    /// # Returns
-    /// - `true` if the command was successfully sent.
-    /// - `false` if the command failed.
-    ///
-    /// # Example
-    /// ```rust
-    /// use media_remote::NowPlaying;
-    ///
-    /// let now_playing = NowPlaying::new();
-    /// now_playing.toggle();
-    /// ```
-    pub fn toggle(&self) -> bool {
-        send_command!(self, Command::TogglePlayPause)
-    }
-
-    /// Play the currently playing media.
-    ///
-    /// # Returns
-    /// - `true` if the command was successfully sent.
-    /// - `false` if the operation failed.
-    ///
-    /// # Example
-    /// ```rust
-    /// use media_remote::NowPlaying;
-    ///
-    /// let now_playing = NowPlaying::new();
-    /// now_playing.play();
-    /// ```
-    pub fn play(&self) -> bool {
-        send_command!(self, Command::Play)
-    }
-
-    /// Pauses the currently playing media.
-    ///
-    /// # Returns
-    /// - `true` if the command was successfully sent.
-    /// - `false` if the command failed.
-    ///
-    /// # Example
-    /// ```rust
-    /// use media_remote::NowPlaying;
-    ///
-    /// let now_playing = NowPlaying::new();
-    /// now_playing.pause();
-    /// ```
-    pub fn pause(&self) -> bool {
-        send_command!(self, Command::Pause)
-    }
-
-    /// Skips to the next track in the playback queue.
-    ///
-    /// # Returns
-    /// - `true` if the command was successfully sent.
-    /// - `false` if the command failed.
-    ///
-    /// # Example
-    /// ```rust
-    /// use media_remote::NowPlaying;
-    ///
-    /// let now_playing = NowPlaying::new();
-    /// now_playing.next();
-    /// ```
-    pub fn next(&self) -> bool {
-        send_command!(self, Command::NextTrack)
-    }
-
-    /// Returns to the previous track in the playback queue.
-    ///
-    /// # Returns
-    /// - `true` if the command was successfully sent.
-    /// - `false` if the command failed.
-    ///
-    /// # Example
-    /// ```rust
-    /// use media_remote::NowPlaying;
-    ///
-    /// let now_playing = NowPlaying::new();
-    /// now_playing.previous();
-    /// ```
-    pub fn previous(&self) -> bool {
-        send_command!(self, Command::PreviousTrack)
-    }
 }
 
 impl Drop for NowPlaying {
     fn drop(&mut self) {
-        unregister_for_now_playing_notifications();
-
         while let Some(observer) = self.observers.pop() {
             remove_observer(observer);
         }
+
+        unregister_for_now_playing_notifications();
     }
 }
+
+impl Controller for NowPlaying {}

@@ -19,10 +19,10 @@ This library **should** be safe to use. However, it is the first attempt at buil
 To get started, first ensure that the library is installed.
 
 ```rust
-use media_remote::NowPlaying;
+use media_remote::{Controller, NowPlaying};
 
 fn main() {
-    // Create an instance of NowPlaying to interact with the media.
+    // Create an instance of NowPlaying to interact with the media remote.
     let now_playing = NowPlaying::new();
 
     // Use a guard lock to safely access media information within this block.
@@ -109,7 +109,7 @@ pub struct NowPlayingInfo {
 
 ### Media Control Functions
 
-These functions allow you to control the currently playing media.
+These functions allow you to control the currently playing media. To use these functions, import `media_remote::Controller`.
 
 - `NowPlaying::toggle(&self) -> bool`
 
