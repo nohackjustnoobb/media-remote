@@ -126,7 +126,7 @@ pub struct BundleInfo {
     pub icon: DynamicImage,
 }
 
-#[derive(Debug, Clone)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct NowPlayingInfo {
     pub is_playing: Option<bool>,
 

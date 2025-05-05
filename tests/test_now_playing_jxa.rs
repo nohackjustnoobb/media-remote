@@ -27,8 +27,8 @@ fn print_info(info: &NowPlayingInfo) {
 }
 
 #[test]
-fn test_now_playing_get_info() {
-    let now_playing = NowPlaying::new();
+fn test_now_playing_jxa_get_info() {
+    let now_playing = NowPlayingJXA::new(Duration::from_secs(1));
 
     let guard = now_playing.get_info();
     let info = guard.as_ref();
@@ -39,8 +39,8 @@ fn test_now_playing_get_info() {
 }
 
 #[test]
-fn test_now_playing_send_command() {
-    let now_playing: NowPlaying = NowPlaying::new();
+fn test_now_playing_jxa_send_command() {
+    let now_playing: NowPlayingJXA = NowPlayingJXA::new(Duration::from_secs(1));
 
     now_playing.pause();
     now_playing.play();
@@ -50,25 +50,32 @@ fn test_now_playing_send_command() {
 }
 
 #[test]
-fn test_now_playing_subscribe() {
-    let now_playing: NowPlaying = NowPlaying::new();
+fn test_now_playing_jxa_subscribe() {
+    let now_playing: NowPlayingJXA = NowPlayingJXA::new(Duration::from_secs(1));
 
     let token = now_playing.subscribe(|info| {
-        print_info(info.as_ref().unwrap());
+        if let Some(info) = info.as_ref() {
+            print_info(info);
+        }
     });
 
     now_playing.unsubscribe(token);
 }
 
-use std::sync::{Arc, Condvar, Mutex};
+use std::{
+    sync::{Arc, Condvar, Mutex},
+    time::Duration,
+};
 
 #[test]
 #[ignore]
-fn test_now_playing_loop() {
-    let now_playing = NowPlaying::new();
+fn test_now_playing_jxa_loop() {
+    let now_playing = NowPlayingJXA::new(Duration::from_secs(1));
 
     now_playing.subscribe(|info| {
-        print_info(info.as_ref().unwrap());
+        if let Some(info) = info.as_ref() {
+            print_info(info);
+        }
     });
 
     // Blocks forever

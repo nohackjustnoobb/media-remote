@@ -1,13 +1,14 @@
 use std::{
     collections::HashMap,
     sync::{
-        atomic::{AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
         Arc, Mutex, RwLock, RwLockReadGuard,
     },
+    thread::{self, JoinHandle},
     time::{Duration, SystemTime},
 };
 
-use crate::{get_bundle_info, get_raw_info, NowPlayingInfo};
+use crate::{get_bundle_info, get_raw_info, ListenerToken, NowPlayingInfo, Subscription};
 
 use super::controller::Controller;
 
@@ -46,9 +47,6 @@ pub fn get_info() -> Option<NowPlayingInfo> {
     })
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ListenerToken(u64);
-
 pub struct NowPlayingJXA {
     info: Arc<RwLock<Option<NowPlayingInfo>>>,
     listeners: Arc<
@@ -60,11 +58,32 @@ pub struct NowPlayingJXA {
         >,
     >,
     token_counter: Arc<AtomicU64>,
+    stop_flag: Arc<AtomicBool>,
+    handle: Option<JoinHandle<()>>,
 }
 
 impl NowPlayingJXA {
     fn update(&mut self, update_interval: Duration) {
-        // TODO
+        let info_clone = Arc::clone(&self.info);
+        let stop_clone = Arc::clone(&self.stop_flag);
+        let listeners = Arc::clone(&self.listeners);
+
+        self.handle = Some(thread::spawn(move || {
+            while !stop_clone.load(Ordering::Relaxed) {
+                thread::sleep(update_interval);
+                if let Some(new_info) = get_info() {
+                    let mut current = info_clone.write().unwrap();
+                    if current.as_ref() != Some(&new_info) {
+                        *current = Some(new_info);
+                        drop(current);
+
+                        for (_, listener) in listeners.clone().lock().unwrap().iter() {
+                            listener(info_clone.read().unwrap());
+                        }
+                    }
+                }
+            }
+        }));
     }
 
     /// Creates a new instance of `NowPlayingJXA` and registers for playback notifications.
@@ -78,6 +97,7 @@ impl NowPlayingJXA {
     /// # Example
     /// ```rust
     /// use media_remote::NowPlayingJXA;
+    /// use std::time::Duration;
     ///
     /// let now_playing = NowPlayingJXA::new(Duration::from_secs(3));
     /// ```
@@ -86,76 +106,13 @@ impl NowPlayingJXA {
             info: Arc::new(RwLock::new(None)),
             listeners: Arc::new(Mutex::new(HashMap::new())),
             token_counter: Arc::new(AtomicU64::new(0)),
+            stop_flag: Arc::new(AtomicBool::new(false)),
+            handle: None,
         };
 
         new_instance.update(update_interval);
 
         new_instance
-    }
-
-    /// Subscribes a listener to receive updates when the "Now Playing" information changes.
-    ///
-    /// # Arguments
-    /// - `listener`: A function or closure that accepts a `RwLockReadGuard<'_, Option<NowPlayingInfo>>`.
-    ///   The function will be invoked with the current "Now Playing" info whenever the data is updated.
-    ///
-    /// # Returns
-    /// - `ListenerToken`: A token representing the listener, which can later be used to unsubscribe.
-    ///
-    /// # Example
-    /// ```rust
-    /// use media_remote::NowPlayingJXA;
-    ///
-    /// let now_playing = NowPlayingJXA::new(Duration::from_secs(3));
-    ///
-    /// now_playing.subscribe(|guard| {
-    ///     let info = guard.as_ref();
-    ///     if let Some(info) = info {
-    ///         println!("Currently playing: {:?}", info.title);
-    ///     }    
-    /// });
-    /// ```
-    pub fn subscribe<F: Fn(RwLockReadGuard<'_, Option<NowPlayingInfo>>) + Send + Sync + 'static>(
-        &self,
-        listener: F,
-    ) -> ListenerToken {
-        listener(self.get_info());
-
-        let token = ListenerToken(self.token_counter.fetch_add(1, Ordering::Relaxed));
-
-        self.listeners
-            .lock()
-            .unwrap()
-            .insert(token.clone(), Box::new(listener));
-
-        token
-    }
-
-    /// Unsubscribes a previously registered listener using the provided `ListenerToken`.
-    ///
-    ///
-    /// # Arguments
-    /// - `token`: The `ListenerToken` returned when the listener was subscribed. It is used to identify
-    ///   and remove the listener.
-    ///
-    /// # Example
-    /// ```rust
-    /// use media_remote::NowPlayingJXA;
-    ///
-    /// let now_playing = NowPlayingJXA::new(Duration::from_secs(3));
-    ///
-    /// let token = now_playing.subscribe(|guard| {
-    ///     let info = guard.as_ref();
-    ///     if let Some(info) = info {
-    ///         println!("Currently playing: {:?}", info.title);
-    ///     }    
-    /// });
-    ///
-    /// now_playing.unsubscribe(token);
-    /// ```
-    pub fn unsubscribe(&self, token: ListenerToken) {
-        let mut listeners = self.listeners.lock().unwrap();
-        listeners.remove(&token);
     }
 
     /// Retrieves the latest now playing information.
@@ -171,8 +128,9 @@ impl NowPlayingJXA {
     /// # Example
     /// ```rust
     /// use media_remote::NowPlayingJXA;
+    /// use std::time::Duration;
     ///
-    /// let now_playing = NowPlayingJXA::new();
+    /// let now_playing = NowPlayingJXA::new(Duration::from_secs(3));
     /// let guard = now_playing.get_info();
     /// let info = guard.as_ref();
     ///
@@ -206,4 +164,40 @@ impl NowPlayingJXA {
     }
 }
 
-impl Controller for NowPlayingJXA {}
+impl Drop for NowPlayingJXA {
+    fn drop(&mut self) {
+        self.stop_flag.store(true, Ordering::Relaxed);
+        if let Some(handle) = self.handle.take() {
+            let _ = handle.join();
+        }
+    }
+}
+
+impl Controller for NowPlayingJXA {
+    fn is_info_some(&self) -> bool {
+        self.info.read().unwrap().as_ref().is_some()
+    }
+}
+
+impl Subscription for NowPlayingJXA {
+    fn get_info(&self) -> RwLockReadGuard<'_, Option<NowPlayingInfo>> {
+        self.get_info()
+    }
+
+    fn get_token_counter(&self) -> Arc<AtomicU64> {
+        self.token_counter.clone()
+    }
+
+    fn get_listeners(
+        &self,
+    ) -> Arc<
+        Mutex<
+            HashMap<
+                super::subscription::ListenerToken,
+                Box<dyn Fn(RwLockReadGuard<'_, Option<NowPlayingInfo>>) + Send + Sync>,
+            >,
+        >,
+    > {
+        self.listeners.clone()
+    }
+}

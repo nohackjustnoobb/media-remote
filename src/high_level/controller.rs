@@ -1,6 +1,18 @@
 use crate::{send_command, Command};
 
+macro_rules! send_command {
+    ($self:expr,$command:expr) => {{
+        if $self.is_info_some() {
+            send_command($command)
+        } else {
+            false
+        }
+    }};
+}
+
 pub trait Controller {
+    fn is_info_some(&self) -> bool;
+
     /// Toggles between play and pause states.
     ///
     /// # Returns
@@ -9,13 +21,13 @@ pub trait Controller {
     ///
     /// # Example
     /// ```rust
-    /// use media_remote::{Controller, NowPlaying};
+    /// use media_remote::prelude::*;
     ///
     /// let now_playing = NowPlaying::new();
     /// now_playing.toggle();
     /// ```
     fn toggle(&self) -> bool {
-        send_command(Command::TogglePlayPause)
+        send_command!(self, Command::TogglePlayPause)
     }
 
     /// Play the currently playing media.
@@ -26,13 +38,13 @@ pub trait Controller {
     ///
     /// # Example
     /// ```rust
-    /// use media_remote::{Controller, NowPlaying};
+    /// use media_remote::prelude::*;
     ///
     /// let now_playing = NowPlaying::new();
     /// now_playing.play();
     /// ```
     fn play(&self) -> bool {
-        send_command(Command::Play)
+        send_command!(self, Command::Play)
     }
 
     /// Pauses the currently playing media.
@@ -43,13 +55,13 @@ pub trait Controller {
     ///
     /// # Example
     /// ```rust
-    /// use media_remote::{Controller, NowPlaying};
+    /// use media_remote::prelude::*;
     ///
     /// let now_playing = NowPlaying::new();
     /// now_playing.pause();
     /// ```
     fn pause(&self) -> bool {
-        send_command(Command::Pause)
+        send_command!(self, Command::Pause)
     }
 
     /// Skips to the next track in the playback queue.
@@ -60,13 +72,13 @@ pub trait Controller {
     ///
     /// # Example
     /// ```rust
-    /// use media_remote::{Controller, NowPlaying};
+    /// use media_remote::prelude::*;
     ///
     /// let now_playing = NowPlaying::new();
     /// now_playing.next();
     /// ```
     fn next(&self) -> bool {
-        send_command(Command::NextTrack)
+        send_command!(self, Command::NextTrack)
     }
 
     /// Returns to the previous track in the playback queue.
@@ -77,12 +89,12 @@ pub trait Controller {
     ///
     /// # Example
     /// ```rust
-    /// use media_remote::{Controller, NowPlaying};
+    /// use media_remote::prelude::*;
     ///
     /// let now_playing = NowPlaying::new();
     /// now_playing.previous();
     /// ```
     fn previous(&self) -> bool {
-        send_command(Command::PreviousTrack)
+        send_command!(self, Command::PreviousTrack)
     }
 }

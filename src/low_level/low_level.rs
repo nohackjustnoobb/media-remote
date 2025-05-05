@@ -41,9 +41,6 @@ macro_rules! safely_dispatch_and_wait {
             }
 
             $func(queue, &block);
-
-            // TODO ChatGPT: If necessary, release queue after usage (depending on API behavior)
-            // IDK if that is true
         }
 
         let (lock, cvar) = &*result;

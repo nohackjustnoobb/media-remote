@@ -1,10 +1,7 @@
 use std::{
     collections::HashMap,
     io::Cursor,
-    sync::{
-        atomic::{AtomicU64, Ordering},
-        Arc, Mutex, RwLock, RwLockReadGuard,
-    },
+    sync::{atomic::AtomicU64, Arc, Mutex, RwLock, RwLockReadGuard},
     time::SystemTime,
 };
 
@@ -15,10 +12,10 @@ use crate::{
     get_now_playing_client_bundle_identifier, get_now_playing_client_parent_app_bundle_identifier,
     get_now_playing_info, register_for_now_playing_notifications, remove_observer,
     unregister_for_now_playing_notifications, InfoTypes, Notification, NowPlayingInfo, Number,
-    Observer,
+    Observer, Subscription,
 };
 
-use super::controller::Controller;
+use crate::{Controller, ListenerToken};
 
 /// A struct for managing and interacting with the "Now Playing" media session.
 ///
@@ -46,9 +43,6 @@ pub struct NowPlaying {
     >,
     token_counter: Arc<AtomicU64>,
 }
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ListenerToken(u64);
 
 fn update_all(info: Arc<RwLock<Option<NowPlayingInfo>>>) {
     let mut info_guard = info.write().unwrap();
@@ -238,71 +232,6 @@ impl NowPlaying {
         new_instance
     }
 
-    /// Subscribes a listener to receive updates when the "Now Playing" information changes.
-    ///
-    /// # Arguments
-    /// - `listener`: A function or closure that accepts a `RwLockReadGuard<'_, Option<NowPlayingInfo>>`.
-    ///   The function will be invoked with the current "Now Playing" info whenever the data is updated.
-    ///
-    /// # Returns
-    /// - `ListenerToken`: A token representing the listener, which can later be used to unsubscribe.
-    ///
-    /// # Example
-    /// ```rust
-    /// use media_remote::NowPlaying;
-    ///
-    /// let now_playing: NowPlaying = NowPlaying::new();
-    ///
-    /// now_playing.subscribe(|guard| {
-    ///     let info = guard.as_ref();
-    ///     if let Some(info) = info {
-    ///         println!("Currently playing: {:?}", info.title);
-    ///     }    
-    /// });
-    /// ```
-    pub fn subscribe<F: Fn(RwLockReadGuard<'_, Option<NowPlayingInfo>>) + Send + Sync + 'static>(
-        &self,
-        listener: F,
-    ) -> ListenerToken {
-        listener(self.get_info());
-
-        let token = ListenerToken(self.token_counter.fetch_add(1, Ordering::Relaxed));
-
-        self.listeners
-            .lock()
-            .unwrap()
-            .insert(token.clone(), Box::new(listener));
-
-        token
-    }
-
-    /// Unsubscribes a previously registered listener using the provided `ListenerToken`.
-    ///
-    ///
-    /// # Arguments
-    /// - `token`: The `ListenerToken` returned when the listener was subscribed. It is used to identify
-    ///   and remove the listener.
-    ///
-    /// # Example
-    /// ```rust
-    /// use media_remote::NowPlaying;
-    ///
-    /// let now_playing: NowPlaying = NowPlaying::new();
-    ///
-    /// let token = now_playing.subscribe(|guard| {
-    ///     let info = guard.as_ref();
-    ///     if let Some(info) = info {
-    ///         println!("Currently playing: {:?}", info.title);
-    ///     }    
-    /// });
-    ///
-    /// now_playing.unsubscribe(token);
-    /// ```
-    pub fn unsubscribe(&self, token: ListenerToken) {
-        let mut listeners = self.listeners.lock().unwrap();
-        listeners.remove(&token);
-    }
-
     /// Retrieves the latest now playing information.
     ///
     /// This function provides a read-locked view of the current playing media metadata.
@@ -361,4 +290,31 @@ impl Drop for NowPlaying {
     }
 }
 
-impl Controller for NowPlaying {}
+impl Controller for NowPlaying {
+    fn is_info_some(&self) -> bool {
+        self.info.read().unwrap().as_ref().is_some()
+    }
+}
+
+impl Subscription for NowPlaying {
+    fn get_info(&self) -> RwLockReadGuard<'_, Option<NowPlayingInfo>> {
+        self.get_info()
+    }
+
+    fn get_token_counter(&self) -> Arc<AtomicU64> {
+        self.token_counter.clone()
+    }
+
+    fn get_listeners(
+        &self,
+    ) -> Arc<
+        Mutex<
+            HashMap<
+                super::subscription::ListenerToken,
+                Box<dyn Fn(RwLockReadGuard<'_, Option<NowPlayingInfo>>) + Send + Sync>,
+            >,
+        >,
+    > {
+        self.listeners.clone()
+    }
+}
