@@ -8,6 +8,19 @@
 
 </div>
 
+<b>
+After macOS 15.4, Apple introduced entitlement verification in the mediaremoted daemon. Clients without the required entitlement are denied access to NowPlaying information. To bypass this limitation, there are two solutions:
+
+1. Code Injection (Requires SIP to be disabled)
+
+   Use [MediaRemoteWizard](https://github.com/Mx-Iris/MediaRemoteWizard) to inject code into mediaremoted, overriding core methods to return YES, thereby allowing any client to connect.
+
+2. AppleScript / JavaScript for Automation (Does not require SIP to be disabled)
+
+   See [macOS 15.4+](#macos-154) for more information.
+
+</b>
+
 This library provides bindings for Apple's private framework, **MediaRemote**. It is primarily designed to access information about media that is currently playing. Therefore, not all methods from the MediaRemote framework are included in these bindings.
 
 This library **should** be safe to use. However, it is the first attempt at building these bindings, so there is a high chance of unexpected errors. If you encounter any issues, please report them in the issue tracker or submit a pull request to help improve the library.
@@ -19,10 +32,10 @@ This library **should** be safe to use. However, it is the first attempt at buil
 To get started, first ensure that the library is installed.
 
 ```rust
-use media_remote::NowPlaying;
+use media_remote::prelude::*;
 
 fn main() {
-    // Create an instance of NowPlaying to interact with the media.
+    // Create an instance of NowPlaying to interact with the media remote.
     let now_playing = NowPlaying::new();
 
     // Use a guard lock to safely access media information within this block.
@@ -109,7 +122,7 @@ pub struct NowPlayingInfo {
 
 ### Media Control Functions
 
-These functions allow you to control the currently playing media.
+These functions allow you to control the currently playing media. To use these functions, import `media_remote::Controller`.
 
 - `NowPlaying::toggle(&self) -> bool`
 
@@ -293,3 +306,9 @@ Retrieves information about an application based on its bundle identifier, inclu
   - `None`: If the application cannot be found, or if there is an error retrieving the information.
 
 </details>
+
+## macOS 15.4+
+
+For macOS 15.4+, use `NowPlayingJAX` instead of `NowPlaying`. The API is identical, except that `NowPlayingJAX::new` requires an `update_interval` parameter. However, due to limitations of JavaScript for Automation (JAX), it is not possible to retrieve the artwork image, and there may be a delay—up to `update_interval`—before the listener is triggered on updates.
+
+If you want to use JAX directly, use the `get_raw_info` function for unprocessed data, or the formatted version, `get_info`. Note that both functions may return None if an error occurs.

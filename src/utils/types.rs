@@ -125,3 +125,20 @@ pub struct BundleInfo {
     pub name: String,
     pub icon: DynamicImage,
 }
+
+#[derive(PartialEq, Debug, Clone)]
+pub struct NowPlayingInfo {
+    pub is_playing: Option<bool>,
+
+    pub title: Option<String>,
+    pub artist: Option<String>,
+    pub album: Option<String>,
+    pub album_cover: Option<DynamicImage>,
+    pub elapsed_time: Option<f64>,
+    pub duration: Option<f64>,
+    pub info_update_time: Option<SystemTime>,
+
+    pub bundle_id: Option<String>,
+    pub bundle_name: Option<String>,
+    pub bundle_icon: Option<DynamicImage>,
+}
