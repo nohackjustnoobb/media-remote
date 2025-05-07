@@ -1,6 +1,6 @@
 [package]
 name = "media-remote"
-version = "0.1.2"
+version = "0.2.2"
 license = "MIT"
 description = "Bindings for MediaRemote.framework"
 readme = "README.md"
