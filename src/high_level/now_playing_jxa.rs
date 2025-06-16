@@ -19,9 +19,9 @@ pub fn get_info() -> Option<NowPlayingInfo> {
     if bundle_id.is_none() {
         bundle_id = raw["client"]["bundleIdentifier"].as_str();
     }
-    let bundle_id = bundle_id?;
+    let bundle_id = bundle_id;
 
-    let bundle_info = get_bundle_info(bundle_id)?;
+    let bundle_info = bundle_id.and_then(|bid| get_bundle_info(bid));
 
     Some(NowPlayingInfo {
         is_playing: raw["isPlaying"].as_bool(),
@@ -41,9 +41,9 @@ pub fn get_info() -> Option<NowPlayingInfo> {
             .as_u64()
             .and_then(|t| Some(SystemTime::UNIX_EPOCH + Duration::from_millis(t)))
             .or(Some(SystemTime::now())),
-        bundle_id: Some(bundle_id.to_string()),
-        bundle_name: Some(bundle_info.name),
-        bundle_icon: Some(bundle_info.icon),
+        bundle_id: bundle_id.map(|b| b.to_string()),
+        bundle_name: bundle_info.as_ref().map(|b| b.name.clone()),
+        bundle_icon: bundle_info.map(|b| b.icon),
     })
 }
 
@@ -103,7 +103,7 @@ impl NowPlayingJXA {
     /// ```
     pub fn new(update_interval: Duration) -> Self {
         let mut new_instance = NowPlayingJXA {
-            info: Arc::new(RwLock::new(None)),
+            info: Arc::new(RwLock::new(get_info())),
             listeners: Arc::new(Mutex::new(HashMap::new())),
             token_counter: Arc::new(AtomicU64::new(0)),
             stop_flag: Arc::new(AtomicBool::new(false)),
