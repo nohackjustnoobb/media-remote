@@ -39,28 +39,26 @@ use crate::{register_for_now_playing_notifications, BundleInfo, Notification, Ob
 /// }
 /// ```
 pub fn get_bundle_info(id: &str) -> Option<BundleInfo> {
-    unsafe {
-        let workspace = NSWorkspace::sharedWorkspace();
-        let url = workspace.URLForApplicationWithBundleIdentifier(&NSString::from_str(id))?;
+    let workspace = NSWorkspace::sharedWorkspace();
+    let url = workspace.URLForApplicationWithBundleIdentifier(&NSString::from_str(id))?;
 
-        let path = &url.path()?;
+    let path = &url.path()?;
 
-        let file_manager = NSFileManager::defaultManager();
-        let name = file_manager.displayNameAtPath(path);
+    let file_manager = NSFileManager::defaultManager();
+    let name = file_manager.displayNameAtPath(path);
 
-        let icon = workspace.iconForFile(path);
-        let icon_data = icon.TIFFRepresentation()?;
-        let icon = ImageReader::new(Cursor::new(icon_data.to_vec()))
-            .with_guessed_format()
-            .ok()?
-            .decode()
-            .ok()?;
+    let icon = workspace.iconForFile(path);
+    let icon_data = icon.TIFFRepresentation()?;
+    let icon = ImageReader::new(Cursor::new(icon_data.to_vec()))
+        .with_guessed_format()
+        .ok()?
+        .decode()
+        .ok()?;
 
-        Some(BundleInfo {
-            name: name.to_string(),
-            icon,
-        })
-    }
+    Some(BundleInfo {
+        name: name.to_string(),
+        icon,
+    })
 }
 
 /// Adds an observer for a specific media notification.
