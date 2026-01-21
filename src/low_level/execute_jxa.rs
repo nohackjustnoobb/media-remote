@@ -5,7 +5,7 @@ use std::{
 
 use serde_json::Value;
 
-static SCRIPT: &[u8] = include_bytes!("nowPlaying.jxa");
+static SCRIPT: &[u8] = include_bytes!("../../assets/nowPlaying.jxa");
 
 pub fn get_raw_info() -> Option<Value> {
     let mut child = Command::new("osascript")
