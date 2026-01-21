@@ -3,7 +3,7 @@
 
 function run() {
   const MediaRemote = $.NSBundle.bundleWithPath(
-    "/System/Library/PrivateFrameworks/MediaRemote.framework/"
+    "/System/Library/PrivateFrameworks/MediaRemote.framework/",
   );
   MediaRemote.load;
 
@@ -20,7 +20,7 @@ function run() {
   const infoConverted = {};
   for (const key in infoDict.js) {
     const value = infoDict.valueForKey(key).js;
-     if (typeof value !== "object") {
+    if (typeof value !== "object") {
       infoConverted[key] = value;
     } else if (value && typeof value.getTime === "function") {
       try {

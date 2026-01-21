@@ -9,15 +9,19 @@
 </div>
 
 <b>
-After macOS 15.4, Apple introduced entitlement verification in the mediaremoted daemon. Clients without the required entitlement are denied access to NowPlaying information. To bypass this limitation, there are two solutions:
+After macOS 15.4, Apple introduced entitlement verification in the mediaremoted daemon. Clients without the required entitlement are denied access to NowPlaying information. To bypass this limitation, there are three solutions:
 
-1. Code Injection (Requires SIP to be disabled)
+1. Perl Adapter (Recommended, Does not require SIP to be disabled)
 
-   Use [MediaRemoteWizard](https://github.com/Mx-Iris/MediaRemoteWizard) to inject code into mediaremoted, overriding core methods to return YES, thereby allowing any client to connect.
+   Use a bundled Perl script to interface with the system's `mediaremote` via [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter/tree/master). See [macOS 15.4+](#macos-154) for more information.
 
 2. AppleScript / JavaScript for Automation (Does not require SIP to be disabled)
 
-   See [macOS 15.4+](#macos-154) for more information.
+   Use system automation to retrieve info. See [macOS 15.4+](#macos-154) for more information.
+
+3. Code Injection (Requires SIP to be disabled)
+
+   Use [MediaRemoteWizard](https://github.com/Mx-Iris/MediaRemoteWizard) to inject code into mediaremoted, overriding core methods to return YES, thereby allowing any client to connect.
 
 </b>
 
@@ -67,7 +71,6 @@ _This is a brief documentation. More detailed documentation, including examples,
 Creates a new instance of `NowPlaying` and registers for playback notifications.
 
 - **Returns**:
-
   - `NowPlaying`: A new instance of the `NowPlaying` struct.
 
 ### `NowPlaying::get_info(&self) -> RwLockReadGuard<'_, Option<NowPlayingInfo>>`
@@ -75,11 +78,9 @@ Creates a new instance of `NowPlaying` and registers for playback notifications.
 Retrieves the latest now playing information.
 
 - **Returns**:
-
   - `RwLockReadGuard<'_, Option<NowPlayingInfo>>`: A guard to the now playing metadata.
 
 - **Note**:
-
   - The lock should be released as soon as possible to minimize blocking time.
 
 ### `NowPlaying::subscribe<F: Fn(RwLockReadGuard<'_, Option<NowPlayingInfo>>) + Send + Sync + 'static>(&self, listener: F) -> ListenerToken`
@@ -87,11 +88,9 @@ Retrieves the latest now playing information.
 Subscribes a listener to receive updates when the "Now Playing" information changes.
 
 - **Arguments**:
-
   - `listener`: A function or closure that accepts a `RwLockReadGuard<'_, Option<NowPlayingInfo>>`.
 
 - **Returns**:
-
   - `ListenerToken`: A token representing the listener, which can later be used to unsubscribe.
 
 ### `NowPlaying::unsubscribe(&self, token: ListenerToken)`
@@ -99,7 +98,6 @@ Subscribes a listener to receive updates when the "Now Playing" information chan
 Unsubscribes a previously registered listener using the provided `ListenerToken`.
 
 - **Arguments**:
-
   - `token`: The `ListenerToken` returned when the listener was subscribed.
 
 ### `NowPlayingInfo`
@@ -153,7 +151,6 @@ These functions allow you to control the currently playing media. To use these f
 Checks whether the currently playing media application is actively playing.
 
 - **Returns**:
-
   - `Some(true)`: If a media application is playing.
   - `Some(false)`: If no media is currently playing.
   - `None`: If the function times out (e.g., due to an API failure or missing response).
@@ -163,12 +160,10 @@ Checks whether the currently playing media application is actively playing.
 Retrieves the current "now playing" client ID (which is a reference).
 
 - **Returns**:
-
   - `Some(Id)`: If a valid client ID is found.
   - `None`: If no client ID is found or the request times out.
 
 - **Note**:
-
   - This function should not be used as the returned ID is short-lived and may cause undefined behavior when used outside of the block.
 
 ### `get_now_playing_application_pid() -> Option<i32>`
@@ -176,7 +171,6 @@ Retrieves the current "now playing" client ID (which is a reference).
 Retrieves the current "now playing" application PID.
 
 - **Returns**:
-
   - `Some(PID)`: If a valid application PID is found.
   - `None`: If no application PID is found or the request times out.
 
@@ -185,7 +179,6 @@ Retrieves the current "now playing" application PID.
 Retrieves the currently playing media information as a `HashMap<String, InfoTypes>`. The function interacts with Apple's CoreFoundation API to extract metadata related to the currently playing media.
 
 - **Returns**:
-
   - `Some(HashMap<String, InfoTypes>)`: If metadata is successfully retrieved.
   - `None`: If no metadata is available or retrieval fails.
 
@@ -194,7 +187,6 @@ Retrieves the currently playing media information as a `HashMap<String, InfoType
 Retrieves the bundle identifier of the parent app for the current "now playing" client.
 
 - **Returns**:
-
   - `Some(String)`: The bundle identifier of the parent app if successfully retrieved.
   - `None`: If the client ID is invalid, the bundle identifier is null, or retrieval fails.
 
@@ -203,7 +195,6 @@ Retrieves the bundle identifier of the parent app for the current "now playing" 
 Retrieves the bundle identifier of the current "now playing" client.
 
 - **Returns**:
-
   - `Some(String)`: The bundle identifier of the client app if successfully retrieved.
   - `None`: If the client ID is invalid, the bundle identifier is null, or retrieval fails.
 
@@ -212,11 +203,9 @@ Retrieves the bundle identifier of the current "now playing" client.
 Sends a media command to the currently active media client.
 
 - **Arguments**:
-
   - `command`: The Command to be sent, representing an action like play, pause, skip, etc.
 
 - **Returns**:
-
   - `true`: If the command was successfully sent and processed.
   - `false`: If the operation failed or the command was not recognized.
 
@@ -229,11 +218,9 @@ Sends a media command to the currently active media client.
 Sets the playback speed of the currently active media client.
 
 - **Arguments**:
-
   - `speed`: The playback speed multiplier.
 
 - **Note**:
-
   - Playback speed changes typically do not work most of the time. Depending on the media client or content, setting the playback speed may not have the desired effect.
 
 ### `set_elapsed_time(elapsed_time: f64)`
@@ -241,11 +228,9 @@ Sets the playback speed of the currently active media client.
 Sets the elapsed time of the currently playing media.
 
 - **Arguments**:
-
   - `elapsed_time`: The elapsed time in seconds to set the current position of the media.
 
 - **Note**:
-
   - Setting the elapsed time can often cause the media to pause. Be cautious when using this function, as the playback might be interrupted and require manual resumption.
 
 ### `register_for_now_playing_notifications()`
@@ -260,7 +245,6 @@ Registers the caller for "Now Playing" notifications.
 Unregisters the caller for "Now Playing" notifications.
 
 - **Note**:
-
   - Should be called when notifications are no longer needed to free resources.
 
   </details>
@@ -273,12 +257,10 @@ Unregisters the caller for "Now Playing" notifications.
 Adds an observer for a specific media notification.
 
 - **Arguments**:
-
   - `notification`: The Notification type representing the event to observe.
   - `closure`: A closure to execute when the notification is received.
 
 - **Returns**:
-
   - An Observer handle that can be used to remove the observer later.
 
 - **Note**:
@@ -289,7 +271,6 @@ Adds an observer for a specific media notification.
 Removes a previously added observer.
 
 - **Arguments**:
-
   - `observer`: The Observer handle returned from add_observer().
 
 ### `get_bundle_info(id: &str) -> Option<BundleInfo>`
@@ -297,11 +278,9 @@ Removes a previously added observer.
 Retrieves information about an application based on its bundle identifier, including the application's name and icon.
 
 - **Arguments**:
-
   - `id`: A string slice representing the bundle identifier of the application.
 
 - **Returns**:
-
   - `Some(BundleInfo)`: If the application is found, containing the application's name and icon.
   - `None`: If the application cannot be found, or if there is an error retrieving the information.
 
@@ -309,6 +288,78 @@ Retrieves information about an application based on its bundle identifier, inclu
 
 ## macOS 15.4+
 
-For macOS 15.4+, use `NowPlayingJAX` instead of `NowPlaying`. The API is identical, except that `NowPlayingJAX::new` requires an `update_interval` parameter. However, due to limitations of JavaScript for Automation (JAX), it is not possible to retrieve the artwork image, and there may be a delay—up to `update_interval`—before the listener is triggered on updates.
+For macOS 15.4+, you have two options:
+
+### 1. Perl Adapter (Recommended)
+
+Use `NowPlayingPerl`. This method uses an embedded Perl script to interface with a custom adapter, allowing it to bypass the entitlement check. This is based on [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter/tree/master) by [ungive](https://github.com/ungive).
+
+**Pros:**
+
+- Supports real-time updates.
+- **Supports retrieval of artwork.**
+- API is nearly identical to `NowPlaying`.
+
+**Cons:**
+
+- Spawns a background process (`perl`).
+
+```rust
+use media_remote::NowPlayingPerl;
+
+let now_playing = NowPlayingPerl::new();
+// Use it just like NowPlaying
+```
+
+### 2. AppleScript / JXA (Alternative)
+
+Use `NowPlayingJXA`. This method uses JavaScript for Automation.
+
+**Pros:**
+
+- No external binary assets (uses system `osascript`).
+
+**Cons:**
+
+- **Cannot retrieval artwork.**
+- Updates may have a delay (polling/interval based).
+
+```rust
+use media_remote::NowPlayingJXA;
+let now_playing = NowPlayingJXA::new(Duration::from_secs(1));
+```
 
 If you want to use JAX directly, use the `get_raw_info` function for unprocessed data, or the formatted version, `get_info`. Note that both functions may return None if an error occurs.
+
+## Development
+
+### Update MediaRemote Adapter
+
+To update the `mediaremote-adapter` submodule and rebuild the assets:
+
+1. Update the submodule:
+
+   ```bash
+   git submodule update --remote
+   ```
+
+2. Run the build script:
+   ```bash
+   ./build.sh
+   ```
+
+### Testing
+
+There are some tests that run indefinitely to test subscriptions. These are valid for `NowPlaying`, `NowPlayingPerl`, and `NowPlayingJXA`. Since they run forever, they are ignored by default.
+
+To run these tests, use:
+
+```bash
+cargo test --test <test_name> -- --nocapture --exact --ignored
+```
+
+Where `<test_name>` can be:
+
+- `test_now_playing`
+- `test_now_playing_perl`
+- `test_now_playing_jxa`
