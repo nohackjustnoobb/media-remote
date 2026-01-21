@@ -2,6 +2,7 @@ use std::{io::Cursor, ptr::NonNull};
 
 use block2::RcBlock;
 use image::ImageReader;
+use objc2::rc::autoreleasepool;
 use objc2::rc::Retained;
 use objc2_app_kit::NSWorkspace;
 use objc2_foundation::{NSFileManager, NSNotification, NSNotificationCenter, NSString};
@@ -39,7 +40,7 @@ use crate::{register_for_now_playing_notifications, BundleInfo, Notification, Ob
 /// }
 /// ```
 pub fn get_bundle_info(id: &str) -> Option<BundleInfo> {
-    unsafe {
+    autoreleasepool(|_| {
         let workspace = NSWorkspace::sharedWorkspace();
         let url = workspace.URLForApplicationWithBundleIdentifier(&NSString::from_str(id))?;
 
@@ -60,7 +61,7 @@ pub fn get_bundle_info(id: &str) -> Option<BundleInfo> {
             name: name.to_string(),
             icon,
         })
-    }
+    })
 }
 
 /// Adds an observer for a specific media notification.
