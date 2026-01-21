@@ -2,9 +2,7 @@ use block2::RcBlock;
 use core::ffi::c_int;
 use dispatch2::ffi::{dispatch_queue_create, DISPATCH_QUEUE_SERIAL};
 use objc2::{runtime::AnyObject, Encoding};
-use objc2_core_foundation::{
-    CFData, CFDate, CFDictionary, CFDictionaryGetCount, CFDictionaryGetKeysAndValues,
-};
+use objc2_core_foundation::{CFData, CFDate, CFDictionary};
 use objc2_foundation::{NSNumber, NSString};
 use std::{
     collections::HashMap,
@@ -194,12 +192,13 @@ pub fn get_now_playing_info() -> Option<HashMap<String, InfoTypes>> {
             }
 
             unsafe {
-                let count = CFDictionaryGetCount(dict.as_ref());
+                let count = dict.as_ref().count();
 
                 let mut keys: Vec<*const c_void> = vec![ptr::null(); count.try_into().unwrap()];
                 let mut values: Vec<*const c_void> = vec![ptr::null(); count.try_into().unwrap()];
 
-                CFDictionaryGetKeysAndValues(dict.as_ref(), keys.as_mut_ptr(), values.as_mut_ptr());
+                dict.as_ref()
+                    .keys_and_values(keys.as_mut_ptr(), values.as_mut_ptr());
 
                 let mut info = HashMap::<String, InfoTypes>::new();
                 for i in 0..count.try_into().unwrap() {

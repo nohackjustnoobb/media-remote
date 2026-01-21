@@ -2,8 +2,7 @@ use std::{io::Cursor, ptr::NonNull};
 
 use block2::RcBlock;
 use image::ImageReader;
-use objc2::rc::autoreleasepool;
-use objc2::rc::Retained;
+use objc2::rc::{autoreleasepool, Retained};
 use objc2_app_kit::NSWorkspace;
 use objc2_foundation::{NSFileManager, NSNotification, NSNotificationCenter, NSString};
 
