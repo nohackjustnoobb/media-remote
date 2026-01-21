@@ -20,7 +20,17 @@ function run() {
   const infoConverted = {};
   for (const key in infoDict.js) {
     const value = infoDict.valueForKey(key).js;
-    infoConverted[key] = typeof value !== "object" ? value : value.getTime();
+     if (typeof value !== "object") {
+      infoConverted[key] = value;
+    } else if (value && typeof value.getTime === "function") {
+      try {
+        infoConverted[key] = value.getTime();
+      } catch (e) {
+        infoConverted[key] = value.toString();
+      }
+    } else {
+      infoConverted[key] = value.toString();
+    }
   }
 
   return JSON.stringify({
