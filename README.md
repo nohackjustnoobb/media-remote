@@ -8,28 +8,27 @@
 
 </div>
 
-<b>
-After macOS 15.4, Apple introduced entitlement verification in the mediaremoted daemon. Clients without the required entitlement are denied access to NowPlaying information. To bypass this limitation, there are three solutions:
+> [!IMPORTANT]  
+> After macOS 15.4, Apple introduced entitlement verification in the mediaremoted daemon. Clients without the required entitlement are denied access to NowPlaying information. To bypass this limitation, there are three solutions:
+>
+> 1. Perl Adapter (Recommended, *Does not* require SIP to be disabled)
+>
+>    Use a bundled Perl script to interface with the system's `mediaremote` via [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter/tree/master). See [macOS 15.4+](#macos-154) for more information.
+>
+> 2. AppleScript / JavaScript for Automation (*Does not* require SIP to be disabled)
+>
+>    Use system automation to retrieve info. See [macOS 15.4+](#macos-154) for more information.
+>
+> 3. Code Injection (*Requires* SIP to be disabled)
+>
+>    Use [MediaRemoteWizard](https://github.com/Mx-Iris/MediaRemoteWizard) to inject code into mediaremoted, overriding core methods to return YES, thereby allowing any client to connect.
 
-1. Perl Adapter (Recommended, Does not require SIP to be disabled)
-
-   Use a bundled Perl script to interface with the system's `mediaremote` via [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter/tree/master). See [macOS 15.4+](#macos-154) for more information.
-
-2. AppleScript / JavaScript for Automation (Does not require SIP to be disabled)
-
-   Use system automation to retrieve info. See [macOS 15.4+](#macos-154) for more information.
-
-3. Code Injection (Requires SIP to be disabled)
-
-   Use [MediaRemoteWizard](https://github.com/Mx-Iris/MediaRemoteWizard) to inject code into mediaremoted, overriding core methods to return YES, thereby allowing any client to connect.
-
-</b>
+> [!WARNING]
+> Since MediaRemote is a private Apple framework, using it may introduce compatibility or stability issues, and your app may not be approved for distribution on the App Store. Use this library at your own risk.
 
 This library provides bindings for Apple's private framework, **MediaRemote**. It is primarily designed to access information about media that is currently playing. Therefore, not all methods from the MediaRemote framework are included in these bindings.
 
 This library **should** be safe to use. However, it is the first attempt at building these bindings, so there is a high chance of unexpected errors. If you encounter any issues, please report them in the issue tracker or submit a pull request to help improve the library.
-
-**Warning:** Since MediaRemote is a private Apple framework, using it may introduce compatibility or stability issues, and your app may not be approved for distribution on the App Store. Use this library at your own risk.
 
 ## Quick Start
 
