@@ -3,7 +3,6 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use image::DynamicImage;
 use objc2::{rc::Retained, runtime::AnyObject};
 
 pub type Id = *const AnyObject;
@@ -123,7 +122,7 @@ impl Notification {
 #[derive(Debug, Clone)]
 pub struct BundleInfo {
     pub name: String,
-    pub icon: DynamicImage,
+    pub icon: Vec<u8>,
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -133,12 +132,12 @@ pub struct NowPlayingInfo {
     pub title: Option<String>,
     pub artist: Option<String>,
     pub album: Option<String>,
-    pub album_cover: Option<DynamicImage>,
+    pub album_cover: Option<Vec<u8>>,
     pub elapsed_time: Option<f64>,
     pub duration: Option<f64>,
     pub info_update_time: Option<SystemTime>,
 
     pub bundle_id: Option<String>,
     pub bundle_name: Option<String>,
-    pub bundle_icon: Option<DynamicImage>,
+    pub bundle_icon: Option<Vec<u8>>,
 }

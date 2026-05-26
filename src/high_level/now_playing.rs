@@ -1,11 +1,8 @@
 use std::{
     collections::HashMap,
-    io::Cursor,
     sync::{atomic::AtomicU64, Arc, Mutex, RwLock, RwLockReadGuard},
     time::SystemTime,
 };
-
-use image::ImageReader;
 
 use crate::{
     add_observer, get_bundle_info, get_now_playing_application_is_playing,
@@ -129,10 +126,7 @@ fn update_info(info: Arc<RwLock<Option<NowPlayingInfo>>>) {
         );
 
         if let Some(InfoTypes::Data(d)) = info.get("kMRMediaRemoteNowPlayingInfoArtworkData") {
-            info_guard.as_mut().unwrap().album_cover = ImageReader::new(Cursor::new(d))
-                .with_guessed_format()
-                .ok()
-                .and_then(|img| img.decode().ok());
+            info_guard.as_mut().unwrap().album_cover = Some(d.clone());
         }
 
         info_guard.as_mut().unwrap().info_update_time = info

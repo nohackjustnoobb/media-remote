@@ -12,7 +12,6 @@ use std::{
 
 use base64::{engine::general_purpose, Engine as _};
 use flate2::read::GzDecoder;
-use image::ImageReader;
 use serde_json::Value;
 use tar::Archive;
 use tempfile::TempDir;
@@ -135,10 +134,7 @@ impl NowPlayingPerl {
             // Clean up main string which might have newlines
             let clean_base64 = artwork_base64.replace("\n", "");
             if let Ok(data) = general_purpose::STANDARD.decode(&clean_base64) {
-                new_info.album_cover = ImageReader::new(Cursor::new(data))
-                    .with_guessed_format()
-                    .ok()
-                    .and_then(|img| img.decode().ok());
+                new_info.album_cover = Some(data);
             }
         }
 

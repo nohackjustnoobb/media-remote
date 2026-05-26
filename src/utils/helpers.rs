@@ -1,7 +1,6 @@
-use std::{io::Cursor, ptr::NonNull};
+use std::ptr::NonNull;
 
 use block2::RcBlock;
-use image::ImageReader;
 use objc2::rc::{autoreleasepool, Retained};
 use objc2_app_kit::NSWorkspace;
 use objc2_foundation::{NSFileManager, NSNotification, NSNotificationCenter, NSString};
@@ -50,11 +49,7 @@ pub fn get_bundle_info(id: &str) -> Option<BundleInfo> {
 
         let icon = workspace.iconForFile(path);
         let icon_data = icon.TIFFRepresentation()?;
-        let icon = ImageReader::new(Cursor::new(icon_data.to_vec()))
-            .with_guessed_format()
-            .ok()?
-            .decode()
-            .ok()?;
+        let icon = icon_data.to_vec();
 
         Some(BundleInfo {
             name: name.to_string(),
