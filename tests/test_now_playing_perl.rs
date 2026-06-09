@@ -8,9 +8,8 @@ fn print_info(info: &NowPlayingInfo) {
     println!("Album: {:?}", info.album);
     if let Some(album_cover) = &info.album_cover {
         println!(
-            "Album Cover: {:?}x{:?}px",
-            album_cover.width(),
-            album_cover.height()
+            "Album Cover: {} bytes",
+            album_cover.len()
         );
     }
     println!("Elapsed Time: {:?}", info.elapsed_time);
@@ -19,9 +18,8 @@ fn print_info(info: &NowPlayingInfo) {
     println!("Bundle Name: {:?}", info.bundle_name);
     if let Some(bundle_icon) = &info.bundle_icon {
         println!(
-            "Bundle Icon: {:?}x{:?}px",
-            bundle_icon.width(),
-            bundle_icon.height()
+            "Bundle Icon: {} bytes",
+            bundle_icon.len()
         );
     }
 }

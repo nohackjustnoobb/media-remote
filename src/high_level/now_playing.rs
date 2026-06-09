@@ -125,6 +125,7 @@ fn update_info(info: Arc<RwLock<Option<NowPlayingInfo>>>) {
             info_guard.as_mut().unwrap().elapsed_time
         );
 
+        #[cfg(feature = "artwork")]
         if let Some(InfoTypes::Data(d)) = info.get("kMRMediaRemoteNowPlayingInfoArtworkData") {
             info_guard.as_mut().unwrap().album_cover = Some(d.clone());
         }
@@ -156,7 +157,10 @@ fn update_app(info: Arc<RwLock<Option<NowPlayingInfo>>>) {
         if let Some(info) = bundle_info {
             info_guard.as_mut().unwrap().bundle_id = Some(id);
             info_guard.as_mut().unwrap().bundle_name = Some(info.name);
-            info_guard.as_mut().unwrap().bundle_icon = Some(info.icon);
+            #[cfg(feature = "artwork")]
+            {
+                info_guard.as_mut().unwrap().bundle_icon = Some(info.icon);
+            }
         }
     }
 }

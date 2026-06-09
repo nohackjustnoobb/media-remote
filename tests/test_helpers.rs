@@ -10,7 +10,7 @@ fn test_get_bundle_info() {
         if let Some(info) = info {
             println!("Now playing client parent app info:");
             println!("Name: {}", info.name);
-            println!("Icon: {}x{}px", info.icon.width(), info.icon.height());
+            println!("Icon: {} bytes", info.icon.len());
         } else {
             println!("Failed to get now playing client parent app info.");
         }

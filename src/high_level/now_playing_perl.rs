@@ -10,6 +10,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
+#[cfg(feature = "artwork")]
 use base64::{engine::general_purpose, Engine as _};
 use flate2::read::GzDecoder;
 use serde_json::Value;
@@ -62,11 +63,15 @@ impl NowPlayingPerl {
 
         // Spawn reading thread
         thread::spawn(move || {
-            let mut child = Command::new("/usr/bin/perl")
-                .arg(&adapter_script)
+            let mut cmd = Command::new("/usr/bin/perl");
+            cmd.arg(&adapter_script)
                 .arg(&framework_path)
                 .arg("stream")
-                .arg("--no-diff")
+                .arg("--no-diff");
+            #[cfg(not(feature = "artwork"))]
+            cmd.arg("--no-artwork");
+
+            let mut child = cmd
                 .stdout(Stdio::piped())
                 .stderr(Stdio::null())
                 .spawn()
@@ -130,6 +135,7 @@ impl NowPlayingPerl {
         };
 
         // Handle artwork
+        #[cfg(feature = "artwork")]
         if let Some(artwork_base64) = payload["artworkData"].as_str() {
             // Clean up main string which might have newlines
             let clean_base64 = artwork_base64.replace("\n", "");
@@ -141,7 +147,10 @@ impl NowPlayingPerl {
         if let Some(bundle_id) = &new_info.bundle_id {
             if let Some(bundle_info) = crate::get_bundle_info(bundle_id) {
                 new_info.bundle_name = Some(bundle_info.name);
-                new_info.bundle_icon = Some(bundle_info.icon);
+                #[cfg(feature = "artwork")]
+                {
+                    new_info.bundle_icon = Some(bundle_info.icon);
+                }
             }
         }
 

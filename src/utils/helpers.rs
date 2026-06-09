@@ -47,9 +47,16 @@ pub fn get_bundle_info(id: &str) -> Option<BundleInfo> {
         let file_manager = NSFileManager::defaultManager();
         let name = file_manager.displayNameAtPath(path);
 
-        let icon = workspace.iconForFile(path);
-        let icon_data = icon.TIFFRepresentation()?;
-        let icon = icon_data.to_vec();
+        #[cfg(feature = "artwork")]
+        let icon = {
+            let icon = workspace.iconForFile(path);
+            icon.TIFFRepresentation()
+                .map(|data| data.to_vec())
+                .unwrap_or_default()
+        };
+
+        #[cfg(not(feature = "artwork"))]
+        let icon = Vec::new();
 
         Some(BundleInfo {
             name: name.to_string(),

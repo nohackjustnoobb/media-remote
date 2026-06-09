@@ -67,6 +67,11 @@ path = "tests/test_now_playing_perl.rs"
 
 [dependencies.base64]
 version = "0.22.1"
+optional = true
+
+[features]
+default = ["artwork"]
+artwork = ["dep:base64"]
 
 [dependencies.block2]
 version = "0.6.0"

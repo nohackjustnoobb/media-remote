@@ -43,7 +43,10 @@ pub fn get_info() -> Option<NowPlayingInfo> {
             .or(Some(SystemTime::now())),
         bundle_id: bundle_id.map(|b| b.to_string()),
         bundle_name: bundle_info.as_ref().map(|b| b.name.clone()),
+        #[cfg(feature = "artwork")]
         bundle_icon: bundle_info.map(|b| b.icon),
+        #[cfg(not(feature = "artwork"))]
+        bundle_icon: None,
     })
 }
 
