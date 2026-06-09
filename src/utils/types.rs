@@ -3,6 +3,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+#[cfg(feature = "artwork")]
 use image::DynamicImage;
 use objc2::{rc::Retained, runtime::AnyObject};
 
@@ -123,6 +124,7 @@ impl Notification {
 #[derive(Debug, Clone)]
 pub struct BundleInfo {
     pub name: String,
+    #[cfg(feature = "artwork")]
     pub icon: DynamicImage,
 }
 
@@ -133,6 +135,7 @@ pub struct NowPlayingInfo {
     pub title: Option<String>,
     pub artist: Option<String>,
     pub album: Option<String>,
+    #[cfg(feature = "artwork")]
     pub album_cover: Option<DynamicImage>,
     pub elapsed_time: Option<f64>,
     pub duration: Option<f64>,
@@ -140,5 +143,6 @@ pub struct NowPlayingInfo {
 
     pub bundle_id: Option<String>,
     pub bundle_name: Option<String>,
+    #[cfg(feature = "artwork")]
     pub bundle_icon: Option<DynamicImage>,
 }

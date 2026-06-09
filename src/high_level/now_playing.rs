@@ -1,10 +1,13 @@
 use std::{
     collections::HashMap,
-    io::Cursor,
     sync::{atomic::AtomicU64, Arc, Mutex, RwLock, RwLockReadGuard},
     time::SystemTime,
 };
 
+#[cfg(feature = "artwork")]
+use std::io::Cursor;
+
+#[cfg(feature = "artwork")]
 use image::ImageReader;
 
 use crate::{
@@ -51,12 +54,14 @@ fn update_all(info: Arc<RwLock<Option<NowPlayingInfo>>>) {
         title: None,
         artist: None,
         album: None,
+        #[cfg(feature = "artwork")]
         album_cover: None,
         elapsed_time: None,
         duration: None,
         info_update_time: None,
         bundle_id: None,
         bundle_name: None,
+        #[cfg(feature = "artwork")]
         bundle_icon: None,
     });
     drop(info_guard);
@@ -128,6 +133,7 @@ fn update_info(info: Arc<RwLock<Option<NowPlayingInfo>>>) {
             info_guard.as_mut().unwrap().elapsed_time
         );
 
+        #[cfg(feature = "artwork")]
         if let Some(InfoTypes::Data(d)) = info.get("kMRMediaRemoteNowPlayingInfoArtworkData") {
             info_guard.as_mut().unwrap().album_cover = ImageReader::new(Cursor::new(d))
                 .with_guessed_format()
@@ -162,7 +168,10 @@ fn update_app(info: Arc<RwLock<Option<NowPlayingInfo>>>) {
         if let Some(info) = bundle_info {
             info_guard.as_mut().unwrap().bundle_id = Some(id);
             info_guard.as_mut().unwrap().bundle_name = Some(info.name);
-            info_guard.as_mut().unwrap().bundle_icon = Some(info.icon);
+            #[cfg(feature = "artwork")]
+            {
+                info_guard.as_mut().unwrap().bundle_icon = Some(info.icon);
+            }
         }
     }
 }
