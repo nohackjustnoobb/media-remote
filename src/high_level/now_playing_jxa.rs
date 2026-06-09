@@ -34,6 +34,7 @@ pub fn get_info() -> Option<NowPlayingInfo> {
         album: raw["info"]["kMRMediaRemoteNowPlayingInfoAlbum"]
             .as_str()
             .map(|s| s.to_string()),
+        #[cfg(feature = "artwork")]
         album_cover: None,
         elapsed_time: raw["info"]["kMRMediaRemoteNowPlayingInfoElapsedTime"].as_f64(),
         duration: raw["info"]["kMRMediaRemoteNowPlayingInfoDuration"].as_f64(),
@@ -43,6 +44,7 @@ pub fn get_info() -> Option<NowPlayingInfo> {
             .or(Some(SystemTime::now())),
         bundle_id: bundle_id.map(|b| b.to_string()),
         bundle_name: bundle_info.as_ref().map(|b| b.name.clone()),
+        #[cfg(feature = "artwork")]
         bundle_icon: bundle_info.map(|b| b.icon),
     })
 }

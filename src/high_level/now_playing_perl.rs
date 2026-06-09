@@ -10,8 +10,10 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
+#[cfg(feature = "artwork")]
 use base64::{engine::general_purpose, Engine as _};
 use flate2::read::GzDecoder;
+#[cfg(feature = "artwork")]
 use image::ImageReader;
 use serde_json::Value;
 use tar::Archive;
@@ -63,11 +65,17 @@ impl NowPlayingPerl {
 
         // Spawn reading thread
         thread::spawn(move || {
-            let mut child = Command::new("/usr/bin/perl")
+            let mut command = Command::new("/usr/bin/perl");
+            command
                 .arg(&adapter_script)
                 .arg(&framework_path)
                 .arg("stream")
-                .arg("--no-diff")
+                .arg("--no-diff");
+
+            #[cfg(not(feature = "artwork"))]
+            command.arg("--no-artwork");
+
+            let mut child = command
                 .stdout(Stdio::piped())
                 .stderr(Stdio::null())
                 .spawn()
@@ -119,6 +127,7 @@ impl NowPlayingPerl {
             title: payload["title"].as_str().map(|s| s.to_string()),
             artist: payload["artist"].as_str().map(|s| s.to_string()),
             album: payload["album"].as_str().map(|s| s.to_string()),
+            #[cfg(feature = "artwork")]
             album_cover: None,
             elapsed_time: payload["elapsedTime"].as_f64(),
             duration: payload["duration"].as_f64(),
@@ -127,10 +136,12 @@ impl NowPlayingPerl {
                 .map(|ts| UNIX_EPOCH + Duration::from_secs_f64(ts)),
             bundle_id: payload["bundleIdentifier"].as_str().map(|s| s.to_string()),
             bundle_name: None,
+            #[cfg(feature = "artwork")]
             bundle_icon: None,
         };
 
         // Handle artwork
+        #[cfg(feature = "artwork")]
         if let Some(artwork_base64) = payload["artworkData"].as_str() {
             // Clean up main string which might have newlines
             let clean_base64 = artwork_base64.replace("\n", "");
@@ -145,7 +156,10 @@ impl NowPlayingPerl {
         if let Some(bundle_id) = &new_info.bundle_id {
             if let Some(bundle_info) = crate::get_bundle_info(bundle_id) {
                 new_info.bundle_name = Some(bundle_info.name);
-                new_info.bundle_icon = Some(bundle_info.icon);
+                #[cfg(feature = "artwork")]
+                {
+                    new_info.bundle_icon = Some(bundle_info.icon);
+                }
             }
         }
 

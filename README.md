@@ -34,6 +34,29 @@ This library **should** be safe to use. However, it is the first attempt at buil
 
 To get started, first ensure that the library is installed.
 
+```toml
+[dependencies]
+media-remote = "*"
+```
+
+> [!NOTE]
+> ### Cargo Features
+>
+> The `artwork` feature is **enabled by default**. It enables album cover and app icon decoding via the `image` crate.
+>
+> To disable artwork (reduce dependencies and memory usage):
+>
+> ```toml
+> [dependencies]
+> media-remote = { version = "*", default-features = false }
+> ```
+>
+> When disabled:
+> - `NowPlayingInfo.album_cover` and `NowPlayingInfo.bundle_icon` are removed.
+> - The `image` and `base64` crates are not compiled.
+
+Minimal example:
+
 ```rust
 use media_remote::prelude::*;
 
@@ -107,15 +130,20 @@ pub struct NowPlayingInfo {
     pub title: Option<String>,
     pub artist: Option<String>,
     pub album: Option<String>,
+    #[cfg(feature = "artwork")]
     pub album_cover: Option<DynamicImage>,
     pub elapsed_time: Option<f64>,
     pub duration: Option<f64>,
     pub info_update_time: Option<SystemTime>,
     pub bundle_id: Option<String>,
     pub bundle_name: Option<String>,
+    #[cfg(feature = "artwork")]
     pub bundle_icon: Option<DynamicImage>,
 }
 ```
+
+> [!NOTE]
+> The `album_cover` and `bundle_icon` fields are only available when the `artwork` feature is enabled (default). Disable default features to remove them.
 
 ### Media Control Functions
 
@@ -296,7 +324,7 @@ Use `NowPlayingPerl`. This method uses an embedded Perl script to interface with
 **Pros:**
 
 - Supports real-time updates.
-- **Supports retrieval of artwork.**
+- **Supports retrieval of artwork** (disable with `--no-artwork` via the `artwork` Cargo feature).
 - API is nearly identical to `NowPlaying`.
 
 **Cons:**

@@ -6,6 +6,7 @@ fn print_info(info: &NowPlayingInfo) {
     println!("Title: {:?}", info.title);
     println!("Artist: {:?}", info.artist);
     println!("Album: {:?}", info.album);
+    #[cfg(feature = "artwork")]
     if let Some(album_cover) = &info.album_cover {
         println!(
             "Album Cover: {:?}x{:?}px",
@@ -17,6 +18,7 @@ fn print_info(info: &NowPlayingInfo) {
     println!("Duration: {:?}", info.duration);
     println!("Bundle ID: {:?}", info.bundle_id);
     println!("Bundle Name: {:?}", info.bundle_name);
+    #[cfg(feature = "artwork")]
     if let Some(bundle_icon) = &info.bundle_icon {
         println!(
             "Bundle Icon: {:?}x{:?}px",

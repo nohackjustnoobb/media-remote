@@ -1,6 +1,9 @@
-use std::{io::Cursor, ptr::NonNull};
+#[cfg(feature = "artwork")]
+use std::io::Cursor;
+use std::ptr::NonNull;
 
 use block2::RcBlock;
+#[cfg(feature = "artwork")]
 use image::ImageReader;
 use objc2::rc::{autoreleasepool, Retained};
 use objc2_app_kit::NSWorkspace;
@@ -48,16 +51,20 @@ pub fn get_bundle_info(id: &str) -> Option<BundleInfo> {
         let file_manager = NSFileManager::defaultManager();
         let name = file_manager.displayNameAtPath(path);
 
-        let icon = workspace.iconForFile(path);
-        let icon_data = icon.TIFFRepresentation()?;
-        let icon = ImageReader::new(Cursor::new(icon_data.to_vec()))
-            .with_guessed_format()
-            .ok()?
-            .decode()
-            .ok()?;
+        #[cfg(feature = "artwork")]
+        let icon = {
+            let icon = workspace.iconForFile(path);
+            let icon_data = icon.TIFFRepresentation()?;
+            ImageReader::new(Cursor::new(icon_data.to_vec()))
+                .with_guessed_format()
+                .ok()?
+                .decode()
+                .ok()?
+        };
 
         Some(BundleInfo {
             name: name.to_string(),
+            #[cfg(feature = "artwork")]
             icon,
         })
     })
