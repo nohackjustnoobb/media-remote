@@ -139,6 +139,7 @@ pub struct NowPlayingInfo {
     pub album_cover: Option<DynamicImage>,
     pub elapsed_time: Option<f64>,
     pub duration: Option<f64>,
+    pub playback_rate: Option<f64>,
     pub info_update_time: Option<SystemTime>,
 
     pub bundle_id: Option<String>,
