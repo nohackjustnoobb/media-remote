@@ -135,7 +135,12 @@ impl NowPlayingPerl {
             info_update_time: payload["timestamp"]
                 .as_str()
                 .and_then(|s| speedate::DateTime::parse_str(s).ok())
-                .map(|dt| UNIX_EPOCH + Duration::from_secs(dt.timestamp() as u64)),
+                .and_then(|dt| {
+                    u64::try_from(dt.timestamp())
+                        .ok()
+                        .and_then(|secs| UNIX_EPOCH.checked_add(Duration::from_secs(secs)))
+                })
+                .or(Some(SystemTime::now())),
             bundle_id: payload["bundleIdentifier"].as_str().map(|s| s.to_string()),
             bundle_name: None,
             #[cfg(feature = "artwork")]
