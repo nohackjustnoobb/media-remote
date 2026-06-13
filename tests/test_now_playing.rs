@@ -17,6 +17,7 @@ fn print_info(info: &NowPlayingInfo) {
     println!("Elapsed Time: {:?}", info.elapsed_time);
     println!("Duration: {:?}", info.duration);
     println!("Playback Rate: {:?}", info.playback_rate);
+    println!("Info Update Time: {:?}", info.info_update_time);
     println!("Bundle ID: {:?}", info.bundle_id);
     println!("Bundle Name: {:?}", info.bundle_name);
     #[cfg(feature = "artwork")]
