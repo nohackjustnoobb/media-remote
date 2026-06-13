@@ -38,6 +38,7 @@ pub fn get_info() -> Option<NowPlayingInfo> {
         album_cover: None,
         elapsed_time: raw["info"]["kMRMediaRemoteNowPlayingInfoElapsedTime"].as_f64(),
         duration: raw["info"]["kMRMediaRemoteNowPlayingInfoDuration"].as_f64(),
+        playback_rate: raw["info"]["kMRMediaRemoteNowPlayingInfoPlaybackRate"].as_f64(),
         info_update_time: raw["info"]["kMRMediaRemoteNowPlayingInfoTimestamp"]
             .as_u64()
             .and_then(|t| Some(SystemTime::UNIX_EPOCH + Duration::from_millis(t)))

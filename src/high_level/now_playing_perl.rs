@@ -131,6 +131,7 @@ impl NowPlayingPerl {
             album_cover: None,
             elapsed_time: payload["elapsedTime"].as_f64(),
             duration: payload["duration"].as_f64(),
+            playback_rate: payload["playbackRate"].as_f64(),
             info_update_time: payload["timestamp"]
                 .as_f64()
                 .map(|ts| UNIX_EPOCH + Duration::from_secs_f64(ts)),
