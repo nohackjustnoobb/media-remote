@@ -169,6 +169,58 @@ These functions allow you to control the currently playing media. To use these f
 - `NowPlaying::previous(&self) -> bool`
 
   Goes back to the previous track.
+
+- `NowPlaying::toggle_shuffle(&self) -> bool`
+
+  Toggles the shuffle state of the playback queue.
+
+- `NowPlaying::toggle_repeat(&self) -> bool`
+
+  Toggles the repeat state of the playback queue.
+
+- `NowPlaying::start_forward_seek(&self) -> bool`
+
+  Starts a forward seek operation.
+
+- `NowPlaying::end_forward_seek(&self) -> bool`
+
+  Ends a forward seek operation.
+
+- `NowPlaying::start_backward_seek(&self) -> bool`
+
+  Starts a backward seek operation.
+
+- `NowPlaying::end_backward_seek(&self) -> bool`
+
+  Ends a backward seek operation.
+
+- `NowPlaying::go_back_fifteen_seconds(&self) -> bool`
+
+  Seeks backward by fifteen seconds.
+
+- `NowPlaying::skip_fifteen_seconds(&self) -> bool`
+
+  Skips forward by fifteen seconds.
+
+- `NowPlaying::set_playback_speed(&self, speed: i32)`
+
+  Sets the playback speed of the currently active media client.
+
+  - **Arguments**:
+    - `speed`: The playback speed multiplier.
+
+  - **Note**:
+    - Playback speed changes typically do not work most of the time. Depending on the media client or content, setting the playback speed may not have the desired effect.
+
+- `NowPlaying::set_elapsed_time(&self, elapsed_time: f64)`
+
+  Sets the elapsed time of the currently playing media.
+
+  - **Arguments**:
+    - `elapsed_time`: The elapsed time in seconds to set the current position of the media.
+
+  - **Note**:
+    - Setting the elapsed time can often cause the media to pause. Be cautious when using this function, as the playback might be interrupted and require manual resumption.
   </details>
 
 <details>

@@ -13,7 +13,6 @@ use crate::utils::types::Id;
 
 #[link(name = "MediaRemote", kind = "framework")]
 extern "C" {
-
     pub fn MRMediaRemoteGetNowPlayingApplicationIsPlaying(
         queue: *mut dispatch_queue_s,
         block: &Block<dyn Fn(c_int)>,

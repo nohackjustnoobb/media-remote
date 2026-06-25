@@ -57,6 +57,16 @@ fn test_now_playing_perl_send_command() {
     now_playing.toggle();
     now_playing.previous();
     now_playing.next();
+    now_playing.toggle_shuffle();
+    now_playing.toggle_repeat();
+    now_playing.start_forward_seek();
+    now_playing.end_forward_seek();
+    now_playing.start_backward_seek();
+    now_playing.end_backward_seek();
+    now_playing.go_back_fifteen_seconds();
+    now_playing.skip_fifteen_seconds();
+    now_playing.set_playback_speed(2);
+    now_playing.set_elapsed_time(1.0);
 }
 
 #[test]

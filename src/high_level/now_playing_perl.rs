@@ -1,6 +1,7 @@
 use std::{
     collections::HashMap,
     io::{BufRead, BufReader, Cursor},
+    path::PathBuf,
     process::{Command, Stdio},
     sync::{
         atomic::{AtomicBool, AtomicU64, Ordering},
@@ -19,7 +20,7 @@ use serde_json::Value;
 use tar::Archive;
 use tempfile::TempDir;
 
-use crate::{Controller, ListenerToken, NowPlayingInfo, Subscription};
+use crate::{Command as MediaCommand, Controller, ListenerToken, NowPlayingInfo, Subscription};
 
 const ADAPTER_ASSET: &[u8] = include_bytes!("../../assets/mediaremote-adapter.tar.gz");
 
@@ -36,6 +37,8 @@ pub struct NowPlayingPerl {
     token_counter: Arc<AtomicU64>,
     _temp_dir: Arc<TempDir>,
     running: Arc<AtomicBool>,
+    adapter_script: PathBuf,
+    framework_path: PathBuf,
 }
 
 impl NowPlayingPerl {
@@ -54,6 +57,10 @@ impl NowPlayingPerl {
         let adapter_script = temp_dir.path().join("mediaremote-adapter.pl");
         let framework_path = temp_dir.path().join("MediaRemoteAdapter.framework");
 
+        // Clones for the spawned thread, which takes ownership via `move`.
+        let adapter_script_thread = adapter_script.clone();
+        let framework_path_thread = framework_path.clone();
+
         let info = Arc::new(RwLock::new(None));
         let listeners = Arc::new(Mutex::new(HashMap::new()));
         let token_counter = Arc::new(AtomicU64::new(0));
@@ -67,8 +74,8 @@ impl NowPlayingPerl {
         thread::spawn(move || {
             let mut command = Command::new("/usr/bin/perl");
             command
-                .arg(&adapter_script)
-                .arg(&framework_path)
+                .arg(&adapter_script_thread)
+                .arg(&framework_path_thread)
                 .arg("stream")
                 .arg("--no-diff");
 
@@ -107,6 +114,8 @@ impl NowPlayingPerl {
             token_counter,
             _temp_dir: Arc::new(temp_dir),
             running,
+            adapter_script,
+            framework_path,
         }
     }
 
@@ -141,7 +150,13 @@ impl NowPlayingPerl {
                         .and_then(|secs| UNIX_EPOCH.checked_add(Duration::from_secs(secs)))
                 })
                 .or(Some(SystemTime::now())),
-            bundle_id: payload["bundleIdentifier"].as_str().map(|s| s.to_string()),
+            bundle_id: {
+                let mut bid = payload["parentApplicationBundleIdentifier"].as_str();
+                if bid.is_none() {
+                    bid = payload["bundleIdentifier"].as_str();
+                }
+                bid.map(|s| s.to_string())
+            },
             bundle_name: None,
             #[cfg(feature = "artwork")]
             bundle_icon: None,
@@ -209,9 +224,116 @@ impl Drop for NowPlayingPerl {
     }
 }
 
+impl NowPlayingPerl {
+    /// Runs the perl adapter with the `send` command and the given MediaRemote command id.
+    /// Returns `true` only when the script exits successfully.
+    fn run_send(&self, command: MediaCommand) -> bool {
+        let status = Command::new("/usr/bin/perl")
+            .arg(&self.adapter_script)
+            .arg(&self.framework_path)
+            .arg("send")
+            .arg((command as i32).to_string())
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+        matches!(status, Ok(s) if s.success())
+    }
+
+    /// Runs the perl adapter with the `seek` command. `position_micros` is in microseconds.
+    fn run_seek(&self, position_micros: u64) -> bool {
+        let status = Command::new("/usr/bin/perl")
+            .arg(&self.adapter_script)
+            .arg(&self.framework_path)
+            .arg("seek")
+            .arg(position_micros.to_string())
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+        matches!(status, Ok(s) if s.success())
+    }
+
+    /// Runs the perl adapter with the `speed` command.
+    fn run_speed(&self, speed: i32) -> bool {
+        let status = Command::new("/usr/bin/perl")
+            .arg(&self.adapter_script)
+            .arg(&self.framework_path)
+            .arg("speed")
+            .arg(speed.to_string())
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+        matches!(status, Ok(s) if s.success())
+    }
+}
+
 impl Controller for NowPlayingPerl {
     fn is_info_some(&self) -> bool {
         self.info.read().unwrap().as_ref().is_some()
+    }
+
+    fn toggle(&self) -> bool {
+        self.run_send(MediaCommand::TogglePlayPause)
+    }
+
+    fn play(&self) -> bool {
+        self.run_send(MediaCommand::Play)
+    }
+
+    fn pause(&self) -> bool {
+        self.run_send(MediaCommand::Pause)
+    }
+
+    fn next(&self) -> bool {
+        self.run_send(MediaCommand::NextTrack)
+    }
+
+    fn previous(&self) -> bool {
+        self.run_send(MediaCommand::PreviousTrack)
+    }
+
+    fn toggle_shuffle(&self) -> bool {
+        self.run_send(MediaCommand::ToggleShuffle)
+    }
+
+    fn toggle_repeat(&self) -> bool {
+        self.run_send(MediaCommand::ToggleRepeat)
+    }
+
+    fn start_forward_seek(&self) -> bool {
+        self.run_send(MediaCommand::StartForwardSeek)
+    }
+
+    fn end_forward_seek(&self) -> bool {
+        self.run_send(MediaCommand::EndForwardSeek)
+    }
+
+    fn start_backward_seek(&self) -> bool {
+        self.run_send(MediaCommand::StartBackwardSeek)
+    }
+
+    fn end_backward_seek(&self) -> bool {
+        self.run_send(MediaCommand::EndBackwardSeek)
+    }
+
+    fn go_back_fifteen_seconds(&self) -> bool {
+        self.run_send(MediaCommand::GoBackFifteenSeconds)
+    }
+
+    fn skip_fifteen_seconds(&self) -> bool {
+        self.run_send(MediaCommand::SkipFifteenSeconds)
+    }
+
+    fn set_playback_speed(&self, speed: i32) {
+        self.run_speed(speed);
+    }
+
+    fn set_elapsed_time(&self, elapsed_time: f64) {
+        // The perl adapter's `seek` command expects a positive integer in microseconds.
+        let position_micros = (elapsed_time.max(0.0) * 1_000_000.0) as u64;
+        self.run_seek(position_micros);
     }
 }
 
