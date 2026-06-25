@@ -9,24 +9,14 @@
 </div>
 
 > [!IMPORTANT]  
-> After macOS 15.4, Apple introduced entitlement verification in the mediaremoted daemon. Clients without the required entitlement are denied access to NowPlaying information. To bypass this limitation, there are three solutions:
+> After macOS 15.4, Apple introduced entitlement verification in the mediaremoted daemon. Clients without the required entitlement are denied access to NowPlaying information. This library works around this by using a bundled Perl script that interfaces with the system's `mediaremote` via [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter/tree/master). This does **not** require SIP to be disabled. See [macOS 15.4+](#macos-154) for more information.
 >
-> 1. Perl Adapter (Recommended, *Does not* require SIP to be disabled)
->
->    Use a bundled Perl script to interface with the system's `mediaremote` via [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter/tree/master). See [macOS 15.4+](#macos-154) for more information.
->
-> 2. AppleScript / JavaScript for Automation (*Does not* require SIP to be disabled)
->
->    Use system automation to retrieve info. See [macOS 15.4+](#macos-154) for more information.
->
-> 3. Code Injection (*Requires* SIP to be disabled)
->
->    Use [MediaRemoteWizard](https://github.com/Mx-Iris/MediaRemoteWizard) to inject code into mediaremoted, overriding core methods to return YES, thereby allowing any client to connect.
+> This is the **perl-only** branch: all non-perl backends (the direct MediaRemote.framework bindings, JXA/AppleScript, and `get_bundle_info`) have been removed to eliminate the `objc2` dependencies and reduce build time.
 
 > [!WARNING]
 > Since MediaRemote is a private Apple framework, using it may introduce compatibility or stability issues, and your app may not be approved for distribution on the App Store. Use this library at your own risk.
 
-This library provides bindings for Apple's private framework, **MediaRemote**. It is primarily designed to access information about media that is currently playing. Therefore, not all methods from the MediaRemote framework are included in these bindings.
+This library provides access to Apple's private framework, **MediaRemote**, via a bundled Perl adapter. It is primarily designed to access information about media that is currently playing.
 
 This library **should** be safe to use. However, it is the first attempt at building these bindings, so there is a high chance of unexpected errors. If you encounter any issues, please report them in the issue tracker or submit a pull request to help improve the library.
 
@@ -36,23 +26,23 @@ To get started, first ensure that the library is installed.
 
 ```toml
 [dependencies]
-media-remote = "*"
+media-remote = { git = "https://github.com/nohackjustnoobb/media-remote.git", branch = "perl-only" }
 ```
 
 > [!NOTE]
 > ### Cargo Features
 >
-> The `artwork` feature is **enabled by default**. It enables album cover and app icon decoding via the `image` crate.
+> The `artwork` feature is **enabled by default**. It enables album cover decoding via the `image` crate.
 >
 > To disable artwork (reduce dependencies and memory usage):
 >
 > ```toml
 > [dependencies]
-> media-remote = { version = "*", default-features = false }
+> media-remote = { git = "https://github.com/nohackjustnoobb/media-remote.git", branch = "perl-only", default-features = false }
 > ```
 >
 > When disabled:
-> - `NowPlayingInfo.album_cover` and `NowPlayingInfo.bundle_icon` are removed.
+> - `NowPlayingInfo.album_cover` is removed.
 > - The `image` and `base64` crates are not compiled.
 
 Minimal example:
@@ -61,8 +51,11 @@ Minimal example:
 use media_remote::prelude::*;
 
 fn main() {
-    // Create an instance of NowPlaying to interact with the media remote.
-    let now_playing = NowPlaying::new();
+    // Create an instance of NowPlayingPerl to interact with the media remote.
+    let now_playing = NowPlayingPerl::new();
+
+    // Give the adapter process a moment to start streaming.
+    std::thread::sleep(std::time::Duration::from_secs(2));
 
     // Use a guard lock to safely access media information within this block.
     // The guard should be released as soon as possible to avoid blocking.
@@ -88,14 +81,14 @@ _This is a brief documentation. More detailed documentation, including examples,
 <details>
   <summary>High Level API</summary>
 
-### `NowPlaying::new() -> NowPlaying`
+### `NowPlayingPerl::new() -> NowPlayingPerl`
 
-Creates a new instance of `NowPlaying` and registers for playback notifications.
+Creates a new instance of `NowPlayingPerl`, unpacks the bundled adapter to a temporary directory, and spawns a background Perl process that streams now playing information.
 
 - **Returns**:
-  - `NowPlaying`: A new instance of the `NowPlaying` struct.
+  - `NowPlayingPerl`: A new instance of the `NowPlayingPerl` struct.
 
-### `NowPlaying::get_info(&self) -> RwLockReadGuard<'_, Option<NowPlayingInfo>>`
+### `NowPlayingPerl::get_info(&self) -> RwLockReadGuard<'_, Option<NowPlayingInfo>>`
 
 Retrieves the latest now playing information.
 
@@ -105,7 +98,7 @@ Retrieves the latest now playing information.
 - **Note**:
   - The lock should be released as soon as possible to minimize blocking time.
 
-### `NowPlaying::subscribe<F: Fn(RwLockReadGuard<'_, Option<NowPlayingInfo>>) + Send + Sync + 'static>(&self, listener: F) -> ListenerToken`
+### `NowPlayingPerl::subscribe<F: Fn(RwLockReadGuard<'_, Option<NowPlayingInfo>>) + Send + Sync + 'static>(&self, listener: F) -> ListenerToken`
 
 Subscribes a listener to receive updates when the "Now Playing" information changes.
 
@@ -115,7 +108,7 @@ Subscribes a listener to receive updates when the "Now Playing" information chan
 - **Returns**:
   - `ListenerToken`: A token representing the listener, which can later be used to unsubscribe.
 
-### `NowPlaying::unsubscribe(&self, token: ListenerToken)`
+### `NowPlayingPerl::unsubscribe(&self, token: ListenerToken)`
 
 Unsubscribes a previously registered listener using the provided `ListenerToken`.
 
@@ -137,72 +130,69 @@ pub struct NowPlayingInfo {
     pub playback_rate: Option<f64>,
     pub info_update_time: Option<SystemTime>,
     pub bundle_id: Option<String>,
-    pub bundle_name: Option<String>,
-    #[cfg(feature = "artwork")]
-    pub bundle_icon: Option<DynamicImage>,
 }
 ```
 
 > [!NOTE]
-> The `album_cover` and `bundle_icon` fields are only available when the `artwork` feature is enabled (default). Disable default features to remove them.
+> The `album_cover` field is only available when the `artwork` feature is enabled (default). Disable default features to remove it.
 
 ### Media Control Functions
 
 These functions allow you to control the currently playing media. To use these functions, import `media_remote::Controller`.
 
-- `NowPlaying::toggle(&self) -> bool`
+- `NowPlayingPerl::toggle(&self) -> bool`
 
   Toggles between play and pause states.
 
-- `NowPlaying::play(&self) -> bool`
+- `NowPlayingPerl::play(&self) -> bool`
 
   Starts playing the media.
 
-- `NowPlaying::pause(&self) -> bool`
+- `NowPlayingPerl::pause(&self) -> bool`
 
   Pauses the media.
 
-- `NowPlaying::next(&self) -> bool`
+- `NowPlayingPerl::next(&self) -> bool`
 
   Skips to the next track.
 
-- `NowPlaying::previous(&self) -> bool`
+- `NowPlayingPerl::previous(&self) -> bool`
 
   Goes back to the previous track.
 
-- `NowPlaying::toggle_shuffle(&self) -> bool`
+- `NowPlayingPerl::toggle_shuffle(&self) -> bool`
 
   Toggles the shuffle state of the playback queue.
 
-- `NowPlaying::toggle_repeat(&self) -> bool`
+- `NowPlayingPerl::toggle_repeat(&self) -> bool`
 
   Toggles the repeat state of the playback queue.
 
-- `NowPlaying::start_forward_seek(&self) -> bool`
+- `NowPlayingPerl::start_forward_seek(&self) -> bool`
 
   Starts a forward seek operation.
 
-- `NowPlaying::end_forward_seek(&self) -> bool`
+- `NowPlayingPerl::end_forward_seek(&self) -> bool`
 
   Ends a forward seek operation.
 
-- `NowPlaying::start_backward_seek(&self) -> bool`
+- `NowPlayingPerl::start_backward_seek(&self) -> bool`
 
   Starts a backward seek operation.
 
-- `NowPlaying::end_backward_seek(&self) -> bool`
+- `NowPlayingPerl::end_backward_seek(&self) -> bool`
 
   Ends a backward seek operation.
 
-- `NowPlaying::go_back_fifteen_seconds(&self) -> bool`
+- `NowPlayingPerl::go_back_fifteen_seconds(&self) -> bool`
 
   Seeks backward by fifteen seconds.
 
-- `NowPlaying::skip_fifteen_seconds(&self) -> bool`
+- `NowPlayingPerl::skip_fifteen_seconds(&self) -> bool`
 
   Skips forward by fifteen seconds.
 
-- `NowPlaying::set_playback_speed(&self, speed: i32)`
+- `NowPlayingPerl::set_playback_speed(&self, speed: i32)`
 
   Sets the playback speed of the currently active media client.
 
@@ -212,7 +202,7 @@ These functions allow you to control the currently playing media. To use these f
   - **Note**:
     - Playback speed changes typically do not work most of the time. Depending on the media client or content, setting the playback speed may not have the desired effect.
 
-- `NowPlaying::set_elapsed_time(&self, elapsed_time: f64)`
+- `NowPlayingPerl::set_elapsed_time(&self, elapsed_time: f64)`
 
   Sets the elapsed time of the currently playing media.
 
@@ -223,162 +213,14 @@ These functions allow you to control the currently playing media. To use these f
     - Setting the elapsed time can often cause the media to pause. Be cautious when using this function, as the playback might be interrupted and require manual resumption.
   </details>
 
-<details>
-  <summary>Low Level API</summary>
-
-### `get_now_playing_application_is_playing() -> Option<bool>`
-
-Checks whether the currently playing media application is actively playing.
-
-- **Returns**:
-  - `Some(true)`: If a media application is playing.
-  - `Some(false)`: If no media is currently playing.
-  - `None`: If the function times out (e.g., due to an API failure or missing response).
-
-### `get_now_playing_client() -> Option<Id>`
-
-Retrieves the current "now playing" client ID (which is a reference).
-
-- **Returns**:
-  - `Some(Id)`: If a valid client ID is found.
-  - `None`: If no client ID is found or the request times out.
-
-- **Note**:
-  - This function should not be used as the returned ID is short-lived and may cause undefined behavior when used outside of the block.
-
-### `get_now_playing_application_pid() -> Option<i32>`
-
-Retrieves the current "now playing" application PID.
-
-- **Returns**:
-  - `Some(PID)`: If a valid application PID is found.
-  - `None`: If no application PID is found or the request times out.
-
-### `get_now_playing_info() -> Option<HashMap<String, InfoTypes>>`
-
-Retrieves the currently playing media information as a `HashMap<String, InfoTypes>`. The function interacts with Apple's CoreFoundation API to extract metadata related to the currently playing media.
-
-- **Returns**:
-  - `Some(HashMap<String, InfoTypes>)`: If metadata is successfully retrieved.
-  - `None`: If no metadata is available or retrieval fails.
-
-### `get_now_playing_client_parent_app_bundle_identifier() -> Option<String>`
-
-Retrieves the bundle identifier of the parent app for the current "now playing" client.
-
-- **Returns**:
-  - `Some(String)`: The bundle identifier of the parent app if successfully retrieved.
-  - `None`: If the client ID is invalid, the bundle identifier is null, or retrieval fails.
-
-### `get_now_playing_client_bundle_identifier() -> Option<String>`
-
-Retrieves the bundle identifier of the current "now playing" client.
-
-- **Returns**:
-  - `Some(String)`: The bundle identifier of the client app if successfully retrieved.
-  - `None`: If the client ID is invalid, the bundle identifier is null, or retrieval fails.
-
-### `send_command(command: Command) -> bool`
-
-Sends a media command to the currently active media client.
-
-- **Arguments**:
-  - `command`: The Command to be sent, representing an action like play, pause, skip, etc.
-
-- **Returns**:
-  - `true`: If the command was successfully sent and processed.
-  - `false`: If the operation failed or the command was not recognized.
-
-- **Notes**:
-  - The `useInfo` argument is not supported by this function and is not used in the current implementation.
-  - If no media is currently playing, this function may open iTunes (or the default media player) to handle the command.
-
-### `set_playback_speed(speed: i32)`
-
-Sets the playback speed of the currently active media client.
-
-- **Arguments**:
-  - `speed`: The playback speed multiplier.
-
-- **Note**:
-  - Playback speed changes typically do not work most of the time. Depending on the media client or content, setting the playback speed may not have the desired effect.
-
-### `set_elapsed_time(elapsed_time: f64)`
-
-Sets the elapsed time of the currently playing media.
-
-- **Arguments**:
-  - `elapsed_time`: The elapsed time in seconds to set the current position of the media.
-
-- **Note**:
-  - Setting the elapsed time can often cause the media to pause. Be cautious when using this function, as the playback might be interrupted and require manual resumption.
-
-### `register_for_now_playing_notifications()`
-
-Registers the caller for "Now Playing" notifications.
-
-- **Note**:
-  - Must be called before adding observers to ensure notifications are received.
-
-### `unregister_for_now_playing_notifications()`
-
-Unregisters the caller for "Now Playing" notifications.
-
-- **Note**:
-  - Should be called when notifications are no longer needed to free resources.
-
-  </details>
-
-  <details>
-  <summary>Helper Functions</summary>
-
-### `add_observer(notification: Notification, closure: F) -> Observer`
-
-Adds an observer for a specific media notification.
-
-- **Arguments**:
-  - `notification`: The Notification type representing the event to observe.
-  - `closure`: A closure to execute when the notification is received.
-
-- **Returns**:
-  - An Observer handle that can be used to remove the observer later.
-
-- **Note**:
-  - `register_for_now_playing_notifications()` **must** be called before using this function, or notifications may not be received.
-
-### `remove_observer(observer: Observer)`
-
-Removes a previously added observer.
-
-- **Arguments**:
-  - `observer`: The Observer handle returned from add_observer().
-
-### `get_bundle_info(id: &str) -> Option<BundleInfo>`
-
-Retrieves information about an application based on its bundle identifier, including the application's name and icon.
-
-- **Arguments**:
-  - `id`: A string slice representing the bundle identifier of the application.
-
-- **Returns**:
-  - `Some(BundleInfo)`: If the application is found, containing the application's name and icon.
-  - `None`: If the application cannot be found, or if there is an error retrieving the information.
-
-</details>
-
 ## macOS 15.4+
 
-For macOS 15.4+, you have two options:
-
-### 1. Perl Adapter (Recommended)
-
-Use `NowPlayingPerl`. This method uses an embedded Perl script to interface with a custom adapter, allowing it to bypass the entitlement check. This is based on [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter/tree/master) by [ungive](https://github.com/ungive).
+For macOS 15.4+, this library uses `NowPlayingPerl`. This method uses an embedded Perl script to interface with a custom adapter, allowing it to bypass the entitlement check. This is based on [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter/tree/master) by [ungive](https://github.com/ungive).
 
 **Pros:**
 
 - Supports real-time updates.
-- **Supports retrieval of artwork** (disable with `--no-artwork` via the `artwork` Cargo feature).
-- API is nearly identical to `NowPlaying`.
+- **Supports retrieval of artwork** (disable with the `artwork` Cargo feature).
 
 **Cons:**
 
@@ -388,28 +230,8 @@ Use `NowPlayingPerl`. This method uses an embedded Perl script to interface with
 use media_remote::NowPlayingPerl;
 
 let now_playing = NowPlayingPerl::new();
-// Use it just like NowPlaying
+// Use it via the Controller and Subscription traits
 ```
-
-### 2. AppleScript / JXA (Alternative)
-
-Use `NowPlayingJXA`. This method uses JavaScript for Automation.
-
-**Pros:**
-
-- No external binary assets (uses system `osascript`).
-
-**Cons:**
-
-- **Cannot retrieval artwork.**
-- Updates may have a delay (polling/interval based).
-
-```rust
-use media_remote::NowPlayingJXA;
-let now_playing = NowPlayingJXA::new(Duration::from_secs(1));
-```
-
-If you want to use JAX directly, use the `get_raw_info` function for unprocessed data, or the formatted version, `get_info`. Note that both functions may return None if an error occurs.
 
 ## Development
 
@@ -424,22 +246,17 @@ To update the `mediaremote-adapter` submodule and rebuild the assets:
    ```
 
 2. Run the build script:
+
    ```bash
    ./build.sh
    ```
 
 ### Testing
 
-There are some tests that run indefinitely to test subscriptions. These are valid for `NowPlaying`, `NowPlayingPerl`, and `NowPlayingJXA`. Since they run forever, they are ignored by default.
+There are some tests that run indefinitely to test subscriptions. Since they run forever, they are ignored by default.
 
 To run these tests, use:
 
 ```bash
-cargo test --test <test_name> -- --nocapture --exact --ignored
+cargo test --test test_now_playing_perl -- --nocapture --exact --ignored
 ```
-
-Where `<test_name>` can be:
-
-- `test_now_playing`
-- `test_now_playing_perl`
-- `test_now_playing_jxa`

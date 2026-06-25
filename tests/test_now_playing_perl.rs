@@ -19,15 +19,6 @@ fn print_info(info: &NowPlayingInfo) {
     println!("Playback Rate: {:?}", info.playback_rate);
     println!("Info Update Time: {:?}", info.info_update_time);
     println!("Bundle ID: {:?}", info.bundle_id);
-    println!("Bundle Name: {:?}", info.bundle_name);
-    #[cfg(feature = "artwork")]
-    if let Some(bundle_icon) = &info.bundle_icon {
-        println!(
-            "Bundle Icon: {:?}x{:?}px",
-            bundle_icon.width(),
-            bundle_icon.height()
-        );
-    }
 }
 
 #[test]

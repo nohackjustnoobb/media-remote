@@ -1,15 +1,7 @@
-use crate::{send_command, Command};
-
-macro_rules! send_command {
-    ($self:expr,$command:expr) => {{
-        if $self.is_info_some() {
-            send_command($command)
-        } else {
-            false
-        }
-    }};
-}
-
+/// A trait for controlling media playback.
+///
+/// Every method is implemented by the backing media-remote adapter
+/// (e.g. [`crate::NowPlayingPerl`]).
 pub trait Controller {
     fn is_info_some(&self) -> bool;
 
@@ -23,12 +15,10 @@ pub trait Controller {
     /// ```rust
     /// use media_remote::prelude::*;
     ///
-    /// let now_playing = NowPlaying::new();
+    /// let now_playing = NowPlayingPerl::new();
     /// now_playing.toggle();
     /// ```
-    fn toggle(&self) -> bool {
-        send_command!(self, Command::TogglePlayPause)
-    }
+    fn toggle(&self) -> bool;
 
     /// Play the currently playing media.
     ///
@@ -40,12 +30,10 @@ pub trait Controller {
     /// ```rust
     /// use media_remote::prelude::*;
     ///
-    /// let now_playing = NowPlaying::new();
+    /// let now_playing = NowPlayingPerl::new();
     /// now_playing.play();
     /// ```
-    fn play(&self) -> bool {
-        send_command!(self, Command::Play)
-    }
+    fn play(&self) -> bool;
 
     /// Pauses the currently playing media.
     ///
@@ -57,12 +45,10 @@ pub trait Controller {
     /// ```rust
     /// use media_remote::prelude::*;
     ///
-    /// let now_playing = NowPlaying::new();
+    /// let now_playing = NowPlayingPerl::new();
     /// now_playing.pause();
     /// ```
-    fn pause(&self) -> bool {
-        send_command!(self, Command::Pause)
-    }
+    fn pause(&self) -> bool;
 
     /// Skips to the next track in the playback queue.
     ///
@@ -74,12 +60,10 @@ pub trait Controller {
     /// ```rust
     /// use media_remote::prelude::*;
     ///
-    /// let now_playing = NowPlaying::new();
+    /// let now_playing = NowPlayingPerl::new();
     /// now_playing.next();
     /// ```
-    fn next(&self) -> bool {
-        send_command!(self, Command::NextTrack)
-    }
+    fn next(&self) -> bool;
 
     /// Returns to the previous track in the playback queue.
     ///
@@ -91,12 +75,10 @@ pub trait Controller {
     /// ```rust
     /// use media_remote::prelude::*;
     ///
-    /// let now_playing = NowPlaying::new();
+    /// let now_playing = NowPlayingPerl::new();
     /// now_playing.previous();
     /// ```
-    fn previous(&self) -> bool {
-        send_command!(self, Command::PreviousTrack)
-    }
+    fn previous(&self) -> bool;
 
     /// Toggles the shuffle state of the playback queue.
     ///
@@ -108,12 +90,10 @@ pub trait Controller {
     /// ```rust
     /// use media_remote::prelude::*;
     ///
-    /// let now_playing = NowPlaying::new();
+    /// let now_playing = NowPlayingPerl::new();
     /// now_playing.toggle_shuffle();
     /// ```
-    fn toggle_shuffle(&self) -> bool {
-        send_command!(self, Command::ToggleShuffle)
-    }
+    fn toggle_shuffle(&self) -> bool;
 
     /// Toggles the repeat state of the playback queue.
     ///
@@ -125,12 +105,10 @@ pub trait Controller {
     /// ```rust
     /// use media_remote::prelude::*;
     ///
-    /// let now_playing = NowPlaying::new();
+    /// let now_playing = NowPlayingPerl::new();
     /// now_playing.toggle_repeat();
     /// ```
-    fn toggle_repeat(&self) -> bool {
-        send_command!(self, Command::ToggleRepeat)
-    }
+    fn toggle_repeat(&self) -> bool;
 
     /// Starts a forward seek operation.
     ///
@@ -142,12 +120,10 @@ pub trait Controller {
     /// ```rust
     /// use media_remote::prelude::*;
     ///
-    /// let now_playing = NowPlaying::new();
+    /// let now_playing = NowPlayingPerl::new();
     /// now_playing.start_forward_seek();
     /// ```
-    fn start_forward_seek(&self) -> bool {
-        send_command!(self, Command::StartForwardSeek)
-    }
+    fn start_forward_seek(&self) -> bool;
 
     /// Ends a forward seek operation.
     ///
@@ -159,12 +135,10 @@ pub trait Controller {
     /// ```rust
     /// use media_remote::prelude::*;
     ///
-    /// let now_playing = NowPlaying::new();
+    /// let now_playing = NowPlayingPerl::new();
     /// now_playing.end_forward_seek();
     /// ```
-    fn end_forward_seek(&self) -> bool {
-        send_command!(self, Command::EndForwardSeek)
-    }
+    fn end_forward_seek(&self) -> bool;
 
     /// Starts a backward seek operation.
     ///
@@ -176,12 +150,10 @@ pub trait Controller {
     /// ```rust
     /// use media_remote::prelude::*;
     ///
-    /// let now_playing = NowPlaying::new();
+    /// let now_playing = NowPlayingPerl::new();
     /// now_playing.start_backward_seek();
     /// ```
-    fn start_backward_seek(&self) -> bool {
-        send_command!(self, Command::StartBackwardSeek)
-    }
+    fn start_backward_seek(&self) -> bool;
 
     /// Ends a backward seek operation.
     ///
@@ -193,12 +165,10 @@ pub trait Controller {
     /// ```rust
     /// use media_remote::prelude::*;
     ///
-    /// let now_playing = NowPlaying::new();
+    /// let now_playing = NowPlayingPerl::new();
     /// now_playing.end_backward_seek();
     /// ```
-    fn end_backward_seek(&self) -> bool {
-        send_command!(self, Command::EndBackwardSeek)
-    }
+    fn end_backward_seek(&self) -> bool;
 
     /// Seeks backward by fifteen seconds.
     ///
@@ -210,12 +180,10 @@ pub trait Controller {
     /// ```rust
     /// use media_remote::prelude::*;
     ///
-    /// let now_playing = NowPlaying::new();
+    /// let now_playing = NowPlayingPerl::new();
     /// now_playing.go_back_fifteen_seconds();
     /// ```
-    fn go_back_fifteen_seconds(&self) -> bool {
-        send_command!(self, Command::GoBackFifteenSeconds)
-    }
+    fn go_back_fifteen_seconds(&self) -> bool;
 
     /// Skips forward by fifteen seconds.
     ///
@@ -227,12 +195,10 @@ pub trait Controller {
     /// ```rust
     /// use media_remote::prelude::*;
     ///
-    /// let now_playing = NowPlaying::new();
+    /// let now_playing = NowPlayingPerl::new();
     /// now_playing.skip_fifteen_seconds();
     /// ```
-    fn skip_fifteen_seconds(&self) -> bool {
-        send_command!(self, Command::SkipFifteenSeconds)
-    }
+    fn skip_fifteen_seconds(&self) -> bool;
 
     /// Sets the playback speed of the currently active media client.
     ///
@@ -247,14 +213,10 @@ pub trait Controller {
     /// ```rust
     /// use media_remote::prelude::*;
     ///
-    /// let now_playing = NowPlaying::new();
+    /// let now_playing = NowPlayingPerl::new();
     /// now_playing.set_playback_speed(2);
     /// ```
-    fn set_playback_speed(&self, speed: i32) {
-        if self.is_info_some() {
-            crate::set_playback_speed(speed);
-        }
-    }
+    fn set_playback_speed(&self, speed: i32);
 
     /// Sets the elapsed time of the currently playing media.
     ///
@@ -269,12 +231,8 @@ pub trait Controller {
     /// ```rust
     /// use media_remote::prelude::*;
     ///
-    /// let now_playing = NowPlaying::new();
+    /// let now_playing = NowPlayingPerl::new();
     /// now_playing.set_elapsed_time(1.0);
     /// ```
-    fn set_elapsed_time(&self, elapsed_time: f64) {
-        if self.is_info_some() {
-            crate::set_elapsed_time(elapsed_time);
-        }
-    }
+    fn set_elapsed_time(&self, elapsed_time: f64);
 }

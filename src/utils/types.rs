@@ -1,54 +1,7 @@
-use std::{
-    fmt::{Display, Formatter, Result},
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::time::SystemTime;
 
 #[cfg(feature = "artwork")]
 use image::DynamicImage;
-use objc2::{rc::Retained, runtime::AnyObject};
-
-pub type Id = *const AnyObject;
-
-#[derive(Debug, Clone)]
-pub enum Number {
-    Signed(i64),
-    Unsigned(u64),
-    Floating(f64),
-}
-
-impl Display for Number {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        match self {
-            Number::Signed(i) => write!(f, "{}", i),
-            Number::Unsigned(u) => write!(f, "{}", u),
-            Number::Floating(fl) => write!(f, "{}", fl),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum InfoTypes {
-    String(String),
-    SystemTime(SystemTime),
-    Data(Vec<u8>),
-    Number(Number),
-    Unsupported,
-}
-
-impl Display for InfoTypes {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        match self {
-            InfoTypes::String(s) => write!(f, "{}", s),
-            InfoTypes::SystemTime(time) => match time.duration_since(UNIX_EPOCH) {
-                Ok(duration) => write!(f, "{} seconds since UNIX_EPOCH", duration.as_secs()),
-                Err(_) => write!(f, "Time is before UNIX_EPOCH"),
-            },
-            InfoTypes::Data(data) => write!(f, "[{} bytes of data]", data.len()),
-            InfoTypes::Number(num) => write!(f, "{}", num),
-            InfoTypes::Unsupported => write!(f, "Unsupported"),
-        }
-    }
-}
 
 #[derive(Debug, Clone)]
 pub enum Command {
@@ -68,64 +21,10 @@ pub enum Command {
     SkipFifteenSeconds = 13,
 }
 
-impl Into<i32> for Command {
-    fn into(self) -> i32 {
-        self as i32
+impl From<Command> for i32 {
+    fn from(command: Command) -> i32 {
+        command as i32
     }
-}
-
-#[derive(Debug, Clone)]
-pub enum Notification {
-    NowPlayingInfoDidChange,
-    NowPlayingPlaybackQueueDidChange,
-    NowPlayingApplicationDidChange,
-    NowPlayingApplicationIsPlayingDidChange,
-    PickableRoutesDidChange,
-    RouteStatusDidChange,
-    NowPlayingPlaybackQueueChanged,
-    PlaybackQueueContentItemsChanged,
-    NowPlayingApplicationClientStateDidChange,
-}
-
-pub type Observer = Retained<AnyObject>;
-
-impl Notification {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Notification::NowPlayingInfoDidChange => {
-                "kMRMediaRemoteNowPlayingInfoDidChangeNotification"
-            }
-            Notification::NowPlayingPlaybackQueueDidChange => {
-                "kMRMediaRemoteNowPlayingPlaybackQueueDidChangeNotification"
-            }
-            Notification::NowPlayingApplicationDidChange => {
-                "kMRMediaRemoteNowPlayingApplicationDidChangeNotification"
-            }
-            Notification::NowPlayingApplicationIsPlayingDidChange => {
-                "kMRMediaRemoteNowPlayingApplicationIsPlayingDidChangeNotification"
-            }
-            Notification::PickableRoutesDidChange => {
-                "kMRMediaRemotePickableRoutesDidChangeNotification"
-            }
-            Notification::RouteStatusDidChange => "kMRMediaRemoteRouteStatusDidChangeNotification",
-            Notification::NowPlayingPlaybackQueueChanged => {
-                "kMRNowPlayingPlaybackQueueChangedNotification"
-            }
-            Notification::PlaybackQueueContentItemsChanged => {
-                "kMRPlaybackQueueContentItemsChangedNotification"
-            }
-            Notification::NowPlayingApplicationClientStateDidChange => {
-                "kMRMediaRemoteNowPlayingApplicationClientStateDidChange"
-            }
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct BundleInfo {
-    pub name: String,
-    #[cfg(feature = "artwork")]
-    pub icon: DynamicImage,
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -143,7 +42,4 @@ pub struct NowPlayingInfo {
     pub info_update_time: Option<SystemTime>,
 
     pub bundle_id: Option<String>,
-    pub bundle_name: Option<String>,
-    #[cfg(feature = "artwork")]
-    pub bundle_icon: Option<DynamicImage>,
 }

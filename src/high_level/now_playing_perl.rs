@@ -119,6 +119,7 @@ impl NowPlayingPerl {
         }
     }
 
+    #[cfg_attr(not(feature = "artwork"), allow(unused_mut))]
     fn update_info(
         info: &Arc<RwLock<Option<NowPlayingInfo>>>,
         listeners: &Arc<
@@ -157,9 +158,6 @@ impl NowPlayingPerl {
                 }
                 bid.map(|s| s.to_string())
             },
-            bundle_name: None,
-            #[cfg(feature = "artwork")]
-            bundle_icon: None,
         };
 
         // Handle artwork
@@ -172,16 +170,6 @@ impl NowPlayingPerl {
                     .with_guessed_format()
                     .ok()
                     .and_then(|img| img.decode().ok());
-            }
-        }
-
-        if let Some(bundle_id) = &new_info.bundle_id {
-            if let Some(bundle_info) = crate::get_bundle_info(bundle_id) {
-                new_info.bundle_name = Some(bundle_info.name);
-                #[cfg(feature = "artwork")]
-                {
-                    new_info.bundle_icon = Some(bundle_info.icon);
-                }
             }
         }
 
