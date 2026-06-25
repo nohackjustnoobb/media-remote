@@ -81,6 +81,19 @@ fn main() {
 }
 ```
 
+## Special Branch: `perl-only`
+
+The [`perl-only`](https://github.com/nohackjustnoobb/media-remote/tree/perl-only) branch keeps **only** the Perl adapter backend (`NowPlayingPerl`) and removes everything else — the direct `MediaRemote.framework` bindings, the JXA/AppleScript backend, and `get_bundle_info` — along with all `objc2` dependencies (`objc2`, `objc2-app-kit`, `objc2-core-foundation`, `objc2-foundation`, `block2`, `dispatch2`).
+
+This dramatically reduces the dependency footprint and build time at the cost of a smaller API surface (no `NowPlaying`, `NowPlayingJXA`, low-level functions, observers, or bundle info helpers).
+
+To use it, depend on the branch directly:
+
+```toml
+[dependencies]
+media-remote = { git = "https://github.com/nohackjustnoobb/media-remote.git", branch = "perl-only" }
+```
+
 ## API Documentation
 
 _This is a brief documentation. More detailed documentation, including examples, is written inside the code documentation. Hover over the function to check the documentation._
