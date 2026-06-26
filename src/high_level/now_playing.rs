@@ -175,7 +175,7 @@ fn update_app(info: Arc<RwLock<Option<NowPlayingInfo>>>) {
             info_guard.as_mut().unwrap().bundle_name = Some(info.name);
             #[cfg(feature = "artwork")]
             {
-                info_guard.as_mut().unwrap().bundle_icon = Some(info.icon);
+                info_guard.as_mut().unwrap().bundle_icon = info.icon;
             }
         }
     }

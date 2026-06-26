@@ -368,13 +368,14 @@ Removes a previously added observer.
 
 ### `get_bundle_info(id: &str) -> Option<BundleInfo>`
 
-Retrieves information about an application based on its bundle identifier, including the application's name and icon.
+Retrieves information about an application based on its bundle identifier, including the application's name and (optionally) its icon.
 
 - **Arguments**:
   - `id`: A string slice representing the bundle identifier of the application.
 
 - **Returns**:
-  - `Some(BundleInfo)`: If the application is found, containing the application's name and icon.
+  - `Some(BundleInfo)`: If the application is found, containing the application's name and an `icon` field.
+    - `icon` is `Option<DynamicImage>`: `Some(image)` when the icon could be decoded, or `None` if icon retrieval or decoding failed. The `icon` field is only present when the `artwork` feature is enabled (default).
   - `None`: If the application cannot be found, or if there is an error retrieving the information.
 
 </details>

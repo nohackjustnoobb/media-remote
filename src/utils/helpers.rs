@@ -1,13 +1,29 @@
 #[cfg(feature = "artwork")]
 use std::io::Cursor;
-use std::ptr::NonNull;
 
 use block2::RcBlock;
+use objc2::rc::{autoreleasepool, Retained};
+
 #[cfg(feature = "artwork")]
 use image::ImageReader;
-use objc2::rc::{autoreleasepool, Retained};
-use objc2_app_kit::NSWorkspace;
-use objc2_foundation::{NSFileManager, NSNotification, NSNotificationCenter, NSString};
+#[cfg(feature = "artwork")]
+use {
+    objc2::{runtime::AnyObject, AnyThread},
+    objc2_app_kit::{
+        NSBitmapImageFileType, NSBitmapImageRep, NSBitmapImageRepPropertyKey, NSWorkspace,
+    },
+    objc2_foundation::{
+        NSDictionary, NSFileManager, NSNotification, NSNotificationCenter, NSString,
+    },
+};
+
+#[cfg(not(feature = "artwork"))]
+use {
+    objc2_app_kit::NSWorkspace,
+    objc2_foundation::{NSFileManager, NSNotification, NSNotificationCenter, NSString},
+};
+
+use std::ptr::NonNull;
 
 #[allow(unused_imports)]
 use crate::{register_for_now_playing_notifications, BundleInfo, Notification, Observer};
@@ -53,13 +69,25 @@ pub fn get_bundle_info(id: &str) -> Option<BundleInfo> {
 
         #[cfg(feature = "artwork")]
         let icon = {
-            let icon = workspace.iconForFile(path);
-            let icon_data = icon.TIFFRepresentation()?;
-            ImageReader::new(Cursor::new(icon_data.to_vec()))
-                .with_guessed_format()
-                .ok()?
-                .decode()
-                .ok()?
+            let image = workspace.iconForFile(path);
+
+            unsafe {
+                let cg_image =
+                    image.CGImageForProposedRect_context_hints(std::ptr::null_mut(), None, None)?;
+                let bitmap_rep = NSBitmapImageRep::alloc();
+                let bitmap_rep = NSBitmapImageRep::initWithCGImage(bitmap_rep, &cg_image);
+                let props = NSDictionary::<NSBitmapImageRepPropertyKey, AnyObject>::new();
+                let data = bitmap_rep
+                    .representationUsingType_properties(NSBitmapImageFileType::PNG, &props)?;
+
+                Some(
+                    ImageReader::new(Cursor::new(data.to_vec()))
+                        .with_guessed_format()
+                        .ok()?
+                        .decode()
+                        .ok()?,
+                )
+            }
         };
 
         Some(BundleInfo {

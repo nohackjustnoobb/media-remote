@@ -125,7 +125,7 @@ impl Notification {
 pub struct BundleInfo {
     pub name: String,
     #[cfg(feature = "artwork")]
-    pub icon: DynamicImage,
+    pub icon: Option<DynamicImage>,
 }
 
 #[derive(PartialEq, Debug, Clone)]
