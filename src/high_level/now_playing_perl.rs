@@ -180,7 +180,7 @@ impl NowPlayingPerl {
                 new_info.bundle_name = Some(bundle_info.name);
                 #[cfg(feature = "artwork")]
                 {
-                    new_info.bundle_icon = Some(bundle_info.icon);
+                    new_info.bundle_icon = bundle_info.icon;
                 }
             }
         }

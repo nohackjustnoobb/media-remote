@@ -11,7 +11,11 @@ fn test_get_bundle_info() {
             println!("Now playing client parent app info:");
             println!("Name: {}", info.name);
             #[cfg(feature = "artwork")]
-            println!("Icon: {}x{}px", info.icon.width(), info.icon.height());
+            if let Some(icon) = &info.icon {
+                println!("Icon: {}x{}px", icon.width(), icon.height());
+            } else {
+                println!("Icon: None");
+            }
         } else {
             println!("Failed to get now playing client parent app info.");
         }

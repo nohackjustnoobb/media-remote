@@ -27,6 +27,8 @@ fn print_info(info: &NowPlayingInfo) {
             bundle_icon.width(),
             bundle_icon.height()
         );
+    } else {
+        println!("Bundle Icon: None");
     }
 }
 
