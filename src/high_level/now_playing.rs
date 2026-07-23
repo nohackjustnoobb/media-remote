@@ -117,23 +117,28 @@ fn update_info(info: Arc<RwLock<Option<NowPlayingInfo>>>) {
             info_guard.as_mut().unwrap().album
         );
 
-        macro_rules! update_float_info {
+        macro_rules! update_number_info {
             ($key:expr, $field:expr) => {
-                if let Some(InfoTypes::Number(Number::Floating(f))) = info.get($key) {
-                    $field = Some(f.clone());
+                if let Some(InfoTypes::Number(n)) = info.get($key) {
+                    let f = match n {
+                        Number::Floating(f) => *f,
+                        Number::Signed(i) => *i as f64,
+                        Number::Unsigned(u) => *u as f64,
+                    };
+                    $field = Some(f);
                 }
             };
         }
 
-        update_float_info!(
+        update_number_info!(
             "kMRMediaRemoteNowPlayingInfoDuration",
             info_guard.as_mut().unwrap().duration
         );
-        update_float_info!(
+        update_number_info!(
             "kMRMediaRemoteNowPlayingInfoElapsedTime",
             info_guard.as_mut().unwrap().elapsed_time
         );
-        update_float_info!(
+        update_number_info!(
             "kMRMediaRemoteNowPlayingInfoPlaybackRate",
             info_guard.as_mut().unwrap().playback_rate
         );
